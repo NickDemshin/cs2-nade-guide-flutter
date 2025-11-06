@@ -201,6 +201,7 @@ class _MapsGrid extends StatelessWidget {
   }
 }
 
+
 class _MapCard extends StatelessWidget {
   final CsMap map;
   final Future<int> countFuture;

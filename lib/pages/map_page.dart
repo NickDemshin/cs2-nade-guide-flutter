@@ -145,6 +145,45 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.nadesForMapTitle(widget.map.name)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    icon: const Icon(Icons.filter_alt),
+                    onPressed: _openTypeFilterSheet,
+                    label: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(_filterType == null
+                          ? l.filterAll
+                          : _typeLabel(context, _filterType!)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    icon: const Icon(Icons.shield),
+                    onPressed: _openSideFilterSheet,
+                    label: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(_filterSide == null
+                          ? l.sideAll
+                          : (_filterSide == 'T'
+                              ? l.sideT
+                              : _filterSide == 'CT'
+                                  ? l.sideCT
+                                  : l.sideBoth)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         actions: [
           if (_selected != null)
             IconButton(
@@ -232,27 +271,6 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
           return Column(
             children: [
-              _FilterBar(
-                selected: _filterType,
-                onSelected: (t) {
-                  setState(() {
-                    _filterType = t;
-                    _selected = null;
-                  });
-                  _saveUiPrefs();
-                },
-              ),
-              _SideFilterBar(
-                selected: _filterSide,
-                onSelected: (s) {
-                  setState(() {
-                    _filterSide = s;
-                    _selected = null;
-                  });
-                  _saveUiPrefs();
-                },
-              ),
-              _LegendBar(),
               const Divider(height: 1),
               Expanded(
                 child: Padding(
@@ -340,13 +358,93 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
-          ],
-        );
+            ],
+          );
       },
     ),
   );
   }
 
+  Future<void> _openTypeFilterSheet() async {
+    final l = AppLocalizations.of(context);
+    final options = <(NadeType?, String, IconData)>[
+      (null, l.filterAll, Icons.filter_alt_off),
+      (NadeType.smoke, l.typeSmoke, Icons.cloud),
+      (NadeType.flash, l.typeFlash, Icons.flash_on),
+      (NadeType.molotov, l.typeMolotov, Icons.local_fire_department),
+      (NadeType.he, l.typeHE, Icons.bubble_chart),
+    ];
+    await showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: options.length,
+            itemBuilder: (context, index) {
+              final o = options[index];
+              final isSel = _filterType == o.$1;
+              return ListTile(
+                leading: Icon(o.$3),
+                title: Text(o.$2),
+                selected: isSel,
+                trailing: isSel ? const Icon(Icons.check) : null,
+                onTap: () {
+                  setState(() {
+                    _filterType = o.$1;
+                    _selected = null;
+                  });
+                  _saveUiPrefs();
+                  Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openSideFilterSheet() async {
+    final l = AppLocalizations.of(context);
+    final options = <(String?, String, IconData)>[
+      (null, l.sideAll, Icons.select_all),
+      ('T', l.sideT, Icons.flag),
+      ('CT', l.sideCT, Icons.shield),
+      ('Both', l.sideBoth, Icons.groups_2),
+    ];
+    await showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: options.length,
+            itemBuilder: (context, index) {
+              final o = options[index];
+              final isSel = _filterSide == o.$1;
+              return ListTile(
+                leading: Icon(o.$3),
+                title: Text(o.$2),
+                selected: isSel,
+                trailing: isSel ? const Icon(Icons.check) : null,
+                onTap: () {
+                  setState(() {
+                    _filterSide = o.$1;
+                    _selected = null;
+                  });
+                  _saveUiPrefs();
+                  Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
   Future<void> _loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
     final list = prefs.getStringList('favorites_${_mapKey()}') ?? const <String>[];
@@ -455,126 +553,9 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   }
 }
 
-class _FilterBar extends StatelessWidget {
-  final NadeType? selected;
-  final ValueChanged<NadeType?> onSelected;
-  const _FilterBar({required this.selected, required this.onSelected});
+// Removed legacy inline filter widgets (_FilterBar, _SideFilterBar)
 
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final types = [null, ...NadeType.values];
-    String label(NadeType? t) {
-      if (t == null) return l.filterAll;
-      switch (t) {
-        case NadeType.smoke:
-          return l.typeSmoke;
-        case NadeType.flash:
-          return l.typeFlash;
-        case NadeType.molotov:
-          return l.typeMolotov;
-        case NadeType.he:
-          return l.typeHE;
-      }
-    }
-
-    return SizedBox(
-      height: 56,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) {
-          final t = types[index];
-          final isSel = selected == t;
-          return ChoiceChip(
-            label: Text(label(t)),
-            selected: isSel,
-            onSelected: (_) => onSelected(t),
-          );
-        },
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemCount: types.length,
-      ),
-    );
-  }
-}
-
-class _SideFilterBar extends StatelessWidget {
-  final String? selected; // null | 'T' | 'CT' | 'Both'
-  final ValueChanged<String?> onSelected;
-  const _SideFilterBar({required this.selected, required this.onSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final items = <String?>[null, 'T', 'CT', 'Both'];
-    String label(String? s) {
-      if (s == null) return l.sideAll;
-      if (s == 'T') return l.sideT;
-      if (s == 'CT') return l.sideCT;
-      if (s == 'Both') return l.sideBoth;
-      return s;
-    }
-
-    return SizedBox(
-      height: 56,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) {
-          final v = items[index];
-          final isSel = selected == v;
-          return ChoiceChip(
-            label: Text(label(v)),
-            selected: isSel,
-            onSelected: (_) => onSelected(v),
-          );
-        },
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemCount: items.length,
-      ),
-    );
-  }
-}
-
-class _LegendBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    Color typeColor(NadeType t) {
-      switch (t) {
-        case NadeType.smoke:
-          return Colors.grey;
-        case NadeType.flash:
-          return Colors.lightBlue;
-        case NadeType.molotov:
-          return Colors.deepOrange;
-        case NadeType.he:
-          return Colors.green;
-      }
-    }
-
-    Widget dot(Color c) => Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1)),
-        );
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: Wrap(
-        spacing: 16,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Row(children: [dot(typeColor(NadeType.smoke)), const SizedBox(width: 6), Text(l.typeSmoke)]),
-          Row(children: [dot(typeColor(NadeType.flash)), const SizedBox(width: 6), Text(l.typeFlash)]),
-          Row(children: [dot(typeColor(NadeType.molotov)), const SizedBox(width: 6), Text(l.typeMolotov)]),
-          Row(children: [dot(typeColor(NadeType.he)), const SizedBox(width: 6), Text(l.typeHE)]),
-        ],
-      ),
-    );
-  }
-}
+// Legend removed
 
 class _SelectedInfo extends StatelessWidget {
   final Nade nade;
