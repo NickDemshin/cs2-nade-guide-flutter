@@ -38,6 +38,8 @@ dependencies:
   url_launcher: ^6.3.0
   shared_preferences: ^2.3.2
   vector_math: ^2.1.4
+  flutter_localizations:
+    sdk: flutter
 
 ## Removed dependency_overrides that pinned outdated Android implementations
 ## to avoid v1 embedding and NDK mismatch issues.
@@ -63,6 +65,7 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   assets:

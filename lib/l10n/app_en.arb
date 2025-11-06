@@ -1,0 +1,42 @@
+{
+  "appTitle": "CS Nade Guide",
+  "homeTitle": "CS2 Grenade Guides",
+  "refresh": "Refresh",
+  "errorLoading": "Failed to load: {error}",
+  "noMaps": "No maps yet",
+  "retry": "Retry",
+
+  "nadesForMapTitle": "Nades — {map}",
+  "showOnlyFavorites": "Only favorites",
+  "showAll": "Show all",
+  "showGrid": "Show grid",
+  "hideGrid": "Hide grid",
+  "resetZoom": "Reset zoom",
+  "coordinatesOn": "Coordinates: on",
+  "coordinatesOff": "Coordinates: off",
+  "copiedCoords": "Copied: {coords}",
+  "colorBlindPalette": "Colorblind-friendly colors",
+
+  "filterAll": "All",
+  "sideAll": "Side: All",
+  "sideT": "T",
+  "sideCT": "CT",
+  "sideBoth": "Both",
+
+  "selectHint": "Tap a point to see where to throw",
+  "coordModeHint": "Long-press to copy coordinates (0..1)",
+
+  "typeSmoke": "Smoke",
+  "typeFlash": "Flash",
+  "typeMolotov": "Molotov",
+  "typeHE": "HE",
+
+  "sideLabel": "Side: {side}",
+  "techniqueLabel": "Technique: {technique}",
+  "details": "Details",
+  "openVideo": "Open video",
+  "openVideoFailed": "Could not open link",
+  "openVideoError": "Error opening link",
+
+  "nadeCount": "ID: {id} • Nades: {count}"
+}

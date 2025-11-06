@@ -1,0 +1,42 @@
+{
+  "appTitle": "CS Nade Guide",
+  "homeTitle": "Гайды по гранатам — CS2",
+  "refresh": "Обновить",
+  "errorLoading": "Ошибка загрузки: {error}",
+  "noMaps": "Пока нет карт",
+  "retry": "Повторить",
+
+  "nadesForMapTitle": "Гранаты — {map}",
+  "showOnlyFavorites": "Только избранные",
+  "showAll": "Показать все",
+  "showGrid": "Показать сетку",
+  "hideGrid": "Скрыть сетку",
+  "resetZoom": "Сбросить зум",
+  "coordinatesOn": "Координаты: вкл",
+  "coordinatesOff": "Координаты: выкл",
+  "copiedCoords": "Координаты скопированы: {coords}",
+  "colorBlindPalette": "Цвета для дальтоников",
+
+  "filterAll": "Все",
+  "sideAll": "Сторона: Все",
+  "sideT": "T",
+  "sideCT": "CT",
+  "sideBoth": "Both",
+
+  "selectHint": "Нажмите на точку на карте, чтобы посмотреть откуда бросать",
+  "coordModeHint": "Долгий тап по карте — скопировать координаты (0..1)",
+
+  "typeSmoke": "Дым",
+  "typeFlash": "Флеш",
+  "typeMolotov": "Молотов",
+  "typeHE": "Осколочная",
+
+  "sideLabel": "Сторона: {side}",
+  "techniqueLabel": "Техника: {technique}",
+  "details": "Подробнее",
+  "openVideo": "Открыть видео",
+  "openVideoFailed": "Не удалось открыть ссылку",
+  "openVideoError": "Ошибка при открытии ссылки",
+
+  "nadeCount": "ID: {id} • Гранат: {count}"
+}

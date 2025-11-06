@@ -41,7 +41,9 @@ class Nade {
   final String to;
   final String technique; // jumpthrow / walk / stand etc
   final String? videoUrl;
-  final String? description;
+  final String? description; // default/ru
+  final String? descriptionEn; // optional localized
+  final String? descriptionRu; // optional localized
   // Нормированные координаты 0..1 относительно карты
   final double toX;
   final double toY;
@@ -63,6 +65,8 @@ class Nade {
     required this.fromY,
     this.videoUrl,
     this.description,
+    this.descriptionEn,
+    this.descriptionRu,
   });
 
   factory Nade.fromJson(Map<String, dynamic> json, {required String mapId}) {
@@ -81,6 +85,8 @@ class Nade {
       fromY: (json['fromY'] as num?)?.toDouble() ?? 0.5,
       videoUrl: json['videoUrl'] as String?,
       description: json['description'] as String?,
+      descriptionEn: json['description_en'] as String?,
+      descriptionRu: json['description_ru'] as String?,
     );
   }
 }

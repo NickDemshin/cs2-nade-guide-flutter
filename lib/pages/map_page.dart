@@ -8,6 +8,7 @@ import '../data/nades_repository.dart';
 import '../models/cs_map.dart';
 import '../models/nade.dart';
 import '../widgets/map_board.dart';
+import '../l10n/app_localizations.dart';
 import 'nade_detail_page.dart';
 
 class _Matrix4Tween extends Tween<vmath.Matrix4> {
@@ -55,6 +56,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   bool _onlyFavorites = false;
   final Set<String> _favorites = <String>{};
   bool _coordMode = false;
+  bool _cbFriendly = false;
 
   @override
   void initState() {
@@ -139,18 +141,19 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Гранаты — ${widget.map.name}'),
+        title: Text(l.nadesForMapTitle(widget.map.name)),
         actions: [
           if (_selected != null)
             IconButton(
-              tooltip: 'Снять выделение',
+              tooltip: l.showAll,
               icon: const Icon(Icons.clear),
               onPressed: () => setState(() => _selected = null),
             ),
           IconButton(
-            tooltip: _onlyFavorites ? 'Показать все' : 'Только избранные',
+            tooltip: _onlyFavorites ? l.showAll : l.showOnlyFavorites,
             icon: Icon(_onlyFavorites ? Icons.favorite : Icons.favorite_border),
             onPressed: () {
               setState(() => _onlyFavorites = !_onlyFavorites);
@@ -158,7 +161,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             },
           ),
           IconButton(
-            tooltip: _showGrid ? 'Скрыть сетку' : 'Показать сетку',
+            tooltip: _showGrid ? l.hideGrid : l.showGrid,
             icon: Icon(_showGrid ? Icons.grid_on : Icons.grid_off),
             onPressed: () {
               setState(() => _showGrid = !_showGrid);
@@ -166,12 +169,20 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             },
           ),
           IconButton(
-            tooltip: _coordMode ? 'Координаты: вкл' : 'Координаты: выкл',
+            tooltip: _coordMode ? l.coordinatesOn : l.coordinatesOff,
             icon: Icon(_coordMode ? Icons.my_location : Icons.location_searching),
             onPressed: () => setState(() => _coordMode = !_coordMode),
           ),
           IconButton(
-            tooltip: 'Сбросить зум',
+            tooltip: l.colorBlindPalette,
+            icon: Icon(_cbFriendly ? Icons.visibility : Icons.visibility_outlined),
+            onPressed: () {
+              setState(() => _cbFriendly = !_cbFriendly);
+              _saveUiPrefs();
+            },
+          ),
+          IconButton(
+            tooltip: l.resetZoom,
             icon: const Icon(Icons.center_focus_strong),
             onPressed: () {
               setState(() {
@@ -194,14 +205,14 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Ошибка загрузки: ${snapshot.error}'),
+                    Text(l.errorLoading(snapshot.error.toString())),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
                       onPressed: () => setState(() {
                         _futureNades = _repo.getNadesByMap(widget.map.id);
                       }),
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Повторить'),
+                      label: Text(l.retry),
                     ),
                   ],
                 ),
@@ -272,13 +283,26 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                       favoriteIds: _favorites,
                       showGrid: _showGrid,
                       scale: _transform.value.getMaxScaleOnAxis(),
+                      typeLabel: (t) {
+                        switch (t) {
+                          case NadeType.smoke:
+                            return l.typeSmoke;
+                          case NadeType.flash:
+                            return l.typeFlash;
+                          case NadeType.molotov:
+                            return l.typeMolotov;
+                          case NadeType.he:
+                            return l.typeHE;
+                        }
+                      },
+                      colorBlindFriendly: _cbFriendly,
                       onLongPressRelative: _coordMode
                           ? (pos) {
                             final text = 'x: ${pos.dx.toStringAsFixed(3)}, y: ${pos.dy.toStringAsFixed(3)}';
                             Clipboard.setData(ClipboardData(text: text));
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Координаты скопированы: $text')),
+                                SnackBar(content: Text(l.copiedCoords(text))),
                               );
                             }
                           }
@@ -312,9 +336,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Text(
-                    _coordMode
-                        ? 'Долгий тап по карте — скопировать координаты (0..1)'
-                        : 'Нажмите на точку на карте, чтобы посмотреть откуда бросать',
+                    _coordMode ? l.coordModeHint : l.selectHint,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
@@ -346,6 +368,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     final scale = prefs.getDouble('ui_${key}_scale');
     final tx = prefs.getDouble('ui_${key}_tx');
     final ty = prefs.getDouble('ui_${key}_ty');
+    final cb = prefs.getBool('ui_${key}_cbFriendly');
     if (!mounted) return;
     setState(() {
       if (idx != null && idx >= 0 && idx < NadeType.values.length) {
@@ -370,6 +393,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             _filterSide = null;
         }
       }
+      if (cb != null) _cbFriendly = cb;
       if (scale != null && tx != null && ty != null) {
         final m = vmath.Matrix4.identity()
           ..translate(tx, ty)
@@ -402,6 +426,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
       sideIdx = -1;
     }
     await prefs.setInt('ui_${key}_filterSide', sideIdx);
+    await prefs.setBool('ui_${key}_cbFriendly', _cbFriendly);
   }
 
   Future<void> _saveTransformPrefs() async {
@@ -437,8 +462,21 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final types = [null, ...NadeType.values];
-    String label(NadeType? t) => t == null ? 'Все' : nadeTypeLabel(t);
+    String label(NadeType? t) {
+      if (t == null) return l.filterAll;
+      switch (t) {
+        case NadeType.smoke:
+          return l.typeSmoke;
+        case NadeType.flash:
+          return l.typeFlash;
+        case NadeType.molotov:
+          return l.typeMolotov;
+        case NadeType.he:
+          return l.typeHE;
+      }
+    }
 
     return SizedBox(
       height: 56,
@@ -468,12 +506,13 @@ class _SideFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final items = <String?>[null, 'T', 'CT', 'Both'];
     String label(String? s) {
-      if (s == null) return 'Сторона: Все';
-      if (s == 'T') return 'T';
-      if (s == 'CT') return 'CT';
-      if (s == 'Both') return 'Both';
+      if (s == null) return l.sideAll;
+      if (s == 'T') return l.sideT;
+      if (s == 'CT') return l.sideCT;
+      if (s == 'Both') return l.sideBoth;
       return s;
     }
 
@@ -501,6 +540,7 @@ class _SideFilterBar extends StatelessWidget {
 class _LegendBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     Color typeColor(NadeType t) {
       switch (t) {
         case NadeType.smoke:
@@ -526,10 +566,10 @@ class _LegendBar extends StatelessWidget {
         spacing: 16,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Row(children: [dot(typeColor(NadeType.smoke)), const SizedBox(width: 6), const Text('Smoke')]),
-          Row(children: [dot(typeColor(NadeType.flash)), const SizedBox(width: 6), const Text('Flash')]),
-          Row(children: [dot(typeColor(NadeType.molotov)), const SizedBox(width: 6), const Text('Molotov')]),
-          Row(children: [dot(typeColor(NadeType.he)), const SizedBox(width: 6), const Text('HE')]),
+          Row(children: [dot(typeColor(NadeType.smoke)), const SizedBox(width: 6), Text(l.typeSmoke)]),
+          Row(children: [dot(typeColor(NadeType.flash)), const SizedBox(width: 6), Text(l.typeFlash)]),
+          Row(children: [dot(typeColor(NadeType.molotov)), const SizedBox(width: 6), Text(l.typeMolotov)]),
+          Row(children: [dot(typeColor(NadeType.he)), const SizedBox(width: 6), Text(l.typeHE)]),
         ],
       ),
     );
@@ -550,6 +590,7 @@ class _SelectedInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: Card(
@@ -565,7 +606,7 @@ class _SelectedInfo extends StatelessWidget {
                     child: Text(nade.title, style: Theme.of(context).textTheme.titleMedium),
                   ),
                   IconButton(
-                    tooltip: isFavorite ? 'Убрать из избранного' : 'В избранное',
+                    tooltip: isFavorite ? l.showAll : l.showOnlyFavorites,
                     icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border, color: Colors.pinkAccent),
                     onPressed: onToggleFavorite,
                   ),
@@ -575,31 +616,31 @@ class _SelectedInfo extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 children: [
-                  Chip(label: Text(nadeTypeLabel(nade.type))),
-                  Chip(label: Text('Сторона: ${nade.side}')),
-                  Chip(label: Text('Техника: ${nade.technique}')),
+                  Chip(label: Text(_typeLabel(context, nade.type))),
+                  Chip(label: Text(l.sideLabel(nade.side))),
+                  Chip(label: Text(l.techniqueLabel(nade.technique))),
                 ],
               ),
               const SizedBox(height: 8),
               Text('Откуда бросать: ${nade.from}'),
               Text('Куда прилетает: ${nade.to}'),
-              if (nade.description != null && nade.description!.isNotEmpty) ...[
+              if (_localizedDescription(context, nade) != null && _localizedDescription(context, nade)!.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(nade.description!),
+                Text(_localizedDescription(context, nade)!),
               ],
               const SizedBox(height: 8),
               Row(
                 children: [
                   OutlinedButton.icon(
                     icon: const Icon(Icons.info_outline),
-                    label: const Text('Подробнее'),
+                    label: Text(l.details),
                     onPressed: onOpenDetails,
                   ),
                   const SizedBox(width: 8),
                   if (nade.videoUrl != null && nade.videoUrl!.isNotEmpty)
                     OutlinedButton.icon(
                       icon: const Icon(Icons.open_in_new),
-                      label: const Text('Открыть видео'),
+                      label: Text(l.openVideo),
                       onPressed: () => _openVideo(context, nade.videoUrl!),
                     ),
                 ],
@@ -629,4 +670,28 @@ Future<void> _openVideo(BuildContext context, String url) async {
       );
     }
   }
+}
+
+String _typeLabel(BuildContext context, NadeType t) {
+    final l = AppLocalizations.of(context);
+  switch (t) {
+    case NadeType.smoke:
+      return l.typeSmoke;
+    case NadeType.flash:
+      return l.typeFlash;
+    case NadeType.molotov:
+      return l.typeMolotov;
+    case NadeType.he:
+      return l.typeHE;
+  }
+}
+
+String? _localizedDescription(BuildContext context, Nade n) {
+  final locale = Localizations.localeOf(context);
+  if (locale.languageCode == 'en') {
+    if (n.descriptionEn != null && n.descriptionEn!.isNotEmpty) return n.descriptionEn;
+  } else if (locale.languageCode == 'ru') {
+    if (n.descriptionRu != null && n.descriptionRu!.isNotEmpty) return n.descriptionRu;
+  }
+  return n.description;
 }

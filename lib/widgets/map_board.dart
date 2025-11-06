@@ -12,6 +12,8 @@ class MapBoard extends StatefulWidget {
   final ValueChanged<Offset>? onLongPressRelative; // нормированные координаты 0..1
   final ValueChanged<Offset>? onDoubleTapLocal; // локальная позиция double-tap
   final double scale; // текущий масштаб из InteractiveViewer
+  final String Function(NadeType)? typeLabel; // локализованные подписи типов
+  final bool colorBlindFriendly; // альтернативная палитра цветов
 
   const MapBoard({
     super.key,
@@ -24,6 +26,8 @@ class MapBoard extends StatefulWidget {
     this.onLongPressRelative,
     this.onDoubleTapLocal,
     this.scale = 1.0,
+    this.typeLabel,
+    this.colorBlindFriendly = false,
   });
 
   @override
@@ -161,10 +165,10 @@ class _MapBoardState extends State<MapBoard> {
                       left: x - 10,
                       top: y - 10,
                       child: Tooltip(
-                        message: '${nadeTypeLabel(n.type)}: ${n.title}',
+                        message: '${(widget.typeLabel?.call(n.type) ?? nadeTypeLabel(n.type))}: ${n.title}',
                         child: _Marker(
                           color: _typeColor(n.type),
-                          label: nadeTypeLabel(n.type)[0],
+                          label: (widget.typeLabel?.call(n.type) ?? nadeTypeLabel(n.type))[0],
                           selected: isSel,
                           scale: widget.scale,
                           favorite: isFav,
@@ -197,6 +201,18 @@ class _MapBoardState extends State<MapBoard> {
   }
 
   Color _typeColor(NadeType t) {
+    if (widget.colorBlindFriendly) {
+      switch (t) {
+        case NadeType.smoke:
+          return const Color(0xFF7F7F7F); // gray
+        case NadeType.flash:
+          return const Color(0xFF0072B2); // blue
+        case NadeType.molotov:
+          return const Color(0xFFE69F00); // orange
+        case NadeType.he:
+          return const Color(0xFFCC79A7); // magenta
+      }
+    }
     switch (t) {
       case NadeType.smoke:
         return Colors.grey;
@@ -244,12 +260,12 @@ class _Marker extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.9),
+              color: color.withValues(alpha: 0.9),
               shape: BoxShape.circle,
               boxShadow: [
                 if (selected)
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
+                    color: Colors.black.withValues(alpha: 0.25),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),
@@ -293,7 +309,7 @@ class _GridPainter extends CustomPainter {
     }
 
     final border = Paint()
-      ..color = Colors.white.withOpacity(0.35)
+      ..color = Colors.white.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawRect(Offset.zero & size, border);

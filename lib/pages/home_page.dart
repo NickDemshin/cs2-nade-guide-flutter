@@ -4,6 +4,8 @@ import '../data/nades_repository.dart';
 import '../models/cs_map.dart';
 import '../models/nade.dart';
 import 'map_page.dart';
+import '../l10n/app_localizations.dart';
+import '../locale_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,12 +40,31 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Гайды по гранатам — CS2'),
+        title: Text(l.homeTitle),
         actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Language',
+            icon: const Icon(Icons.language),
+            onSelected: (code) {
+              if (code == 'ru') {
+                LocaleController.setRu();
+              } else if (code == 'en') {
+                LocaleController.setEn();
+              } else {
+                LocaleController.setSystem();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'system', child: Text('System')),
+              const PopupMenuItem(value: 'ru', child: Text('Русский')),
+              const PopupMenuItem(value: 'en', child: Text('English')),
+            ],
+          ),
           IconButton(
-            tooltip: 'Обновить',
+            tooltip: l.refresh,
             icon: const Icon(Icons.refresh),
             onPressed: _reload,
           ),
@@ -56,11 +77,11 @@ class _HomePageState extends State<HomePage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Ошибка загрузки: \${snapshot.error}'));
+            return Center(child: Text(l.errorLoading(snapshot.error.toString())));
           }
           final maps = snapshot.data ?? const <CsMap>[];
           if (maps.isEmpty) {
-            return const Center(child: Text('Пока нет карт'));
+            return Center(child: Text(l.noMaps));
           }
           return RefreshIndicator(
             onRefresh: () async {
@@ -82,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                     builder: (context, snap) {
                       if (!snap.hasData) return Text('ID: ${m.id}');
                       final count = snap.data!;
-                      return Text('ID: ${m.id} • Гранат: $count');
+                      return Text(l.nadeCount(m.id, count));
                     },
                   ),
                   trailing: const Icon(Icons.chevron_right),

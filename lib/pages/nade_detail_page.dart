@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../l10n/app_localizations.dart';
 
 import '../models/nade.dart';
 
@@ -9,6 +10,8 @@ class NadeDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final desc = _localizedDescription(context, nade);
     return Scaffold(
       appBar: AppBar(title: Text(nade.title)),
       body: ListView(
@@ -18,18 +21,18 @@ class NadeDetailPage extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              Chip(label: Text(nadeTypeLabel(nade.type))),
-              Chip(label: Text('Сторона: ${nade.side}')),
-              Chip(label: Text('Техника: ${nade.technique}')),
+              Chip(label: Text(_typeLabel(context, nade.type))),
+              Chip(label: Text(l.sideLabel(nade.side))),
+              Chip(label: Text(l.techniqueLabel(nade.technique))),
             ],
           ),
           const SizedBox(height: 12),
           _InfoRow(title: 'Откуда', value: nade.from),
           _InfoRow(title: 'Куда', value: nade.to),
-          if (nade.description != null && nade.description!.isNotEmpty) ...[
+          if (desc != null && desc.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              nade.description!,
+              desc,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -43,7 +46,7 @@ class NadeDetailPage extends StatelessWidget {
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.open_in_new),
-                  label: const Text('Открыть видео'),
+                  label: Text(l.openVideo),
                   onPressed: () => _openVideo(context, nade.videoUrl!),
                 ),
               ],
@@ -85,14 +88,38 @@ Future<void> _openVideo(BuildContext context, String url) async {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось открыть ссылку')),
+        SnackBar(content: Text(AppLocalizations.of(context).openVideoFailed)),
       );
     }
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ошибка при открытии ссылки')),
+        SnackBar(content: Text(AppLocalizations.of(context).openVideoError)),
       );
     }
   }
+}
+
+String _typeLabel(BuildContext context, NadeType t) {
+  final l = AppLocalizations.of(context);
+  switch (t) {
+    case NadeType.smoke:
+      return l.typeSmoke;
+    case NadeType.flash:
+      return l.typeFlash;
+    case NadeType.molotov:
+      return l.typeMolotov;
+    case NadeType.he:
+      return l.typeHE;
+  }
+}
+
+String? _localizedDescription(BuildContext context, Nade n) {
+  final locale = Localizations.localeOf(context);
+  if (locale.languageCode == 'en') {
+    if (n.descriptionEn != null && n.descriptionEn!.isNotEmpty) return n.descriptionEn;
+  } else if (locale.languageCode == 'ru') {
+    if (n.descriptionRu != null && n.descriptionRu!.isNotEmpty) return n.descriptionRu;
+  }
+  return n.description;
 }
