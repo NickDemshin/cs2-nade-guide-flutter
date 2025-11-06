@@ -11,6 +11,7 @@ class MapBoard extends StatefulWidget {
   final Set<String>? favoriteIds; // набор избранных ID для визуальной пометки
   final ValueChanged<Offset>? onLongPressRelative; // нормированные координаты 0..1
   final ValueChanged<Offset>? onDoubleTapLocal; // локальная позиция double-tap
+  final double scale; // текущий масштаб из InteractiveViewer
 
   const MapBoard({
     super.key,
@@ -22,6 +23,7 @@ class MapBoard extends StatefulWidget {
     this.favoriteIds,
     this.onLongPressRelative,
     this.onDoubleTapLocal,
+    this.scale = 1.0,
   });
 
   @override
@@ -164,6 +166,7 @@ class _MapBoardState extends State<MapBoard> {
                           color: _typeColor(n.type),
                           label: nadeTypeLabel(n.type)[0],
                           selected: isSel,
+                          scale: widget.scale,
                           favorite: isFav,
                           onTap: () => widget.onSelect(n),
                         ),
@@ -180,6 +183,7 @@ class _MapBoardState extends State<MapBoard> {
                         color: Colors.amber,
                         label: 'S',
                         selected: true,
+                        scale: widget.scale,
                         onTap: () {},
                       ),
                     ),
@@ -212,6 +216,7 @@ class _Marker extends StatelessWidget {
   final VoidCallback onTap;
   final bool selected;
   final bool favorite;
+  final double scale;
 
   const _Marker({
     required this.color,
@@ -219,13 +224,16 @@ class _Marker extends StatelessWidget {
     required this.onTap,
     this.selected = false,
     this.favorite = false,
+    this.scale = 1.0,
   });
 
   @override
   Widget build(BuildContext context) {
     final borderColor = favorite ? Colors.pinkAccent : Colors.white;
     final borderWidth = favorite ? 3.0 : 2.0;
-    final size = selected ? 24.0 : 20.0;
+    final base = selected ? 24.0 : 20.0;
+    final inv = scale <= 0 ? 1.0 : (1.0 / scale);
+    final size = (base * inv).clamp(12.0, 28.0);
     return GestureDetector(
       onTap: onTap,
       child: Stack(

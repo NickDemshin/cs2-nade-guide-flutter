@@ -10,6 +10,25 @@ import '../models/nade.dart';
 import '../widgets/map_board.dart';
 import 'nade_detail_page.dart';
 
+class _Matrix4Tween extends Tween<vmath.Matrix4> {
+  _Matrix4Tween({required vmath.Matrix4 begin, required vmath.Matrix4 end})
+      : super(begin: begin, end: end);
+
+  @override
+  vmath.Matrix4 lerp(double t) {
+    final b = begin!;
+    final e = end!;
+    final r = vmath.Matrix4.zero();
+    final bs = b.storage;
+    final es = e.storage;
+    final rs = r.storage;
+    for (int i = 0; i < 16; i++) {
+      rs[i] = bs[i] + (es[i] - bs[i]) * t;
+    }
+    return r;
+  }
+}
+
 class MapPage extends StatefulWidget {
   final CsMap map;
   const MapPage({super.key, required this.map});
@@ -18,7 +37,7 @@ class MapPage extends StatefulWidget {
   State<MapPage> createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
+class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   final _repo = const NadesRepository();
   late Future<List<Nade>> _futureNades;
 
@@ -26,6 +45,10 @@ class _MapPageState extends State<MapPage> {
   String? _filterSide; // null = все, иначе 'T' | 'CT' | 'Both'
   Nade? _selected;
   final _transform = TransformationController();
+  final _viewerKey = GlobalKey();
+  final _boardKey = GlobalKey();
+  late final AnimationController _zoomController;
+  Animation<vmath.Matrix4>? _zoomAnimation;
   static const double _minScale = 1.0;
   static const double _maxScale = 5.0;
   bool _showGrid = true;
@@ -40,6 +63,13 @@ class _MapPageState extends State<MapPage> {
     _loadUiPrefs();
     _loadFavorites();
     _transform.addListener(_onTransformChanged);
+    _zoomController = AnimationController(vsync: this, duration: const Duration(milliseconds: 220))
+      ..addListener(() {
+        final anim = _zoomAnimation;
+        if (anim != null) {
+          _transform.value = anim.value;
+        }
+      });
   }
 
   @override
@@ -55,6 +85,7 @@ class _MapPageState extends State<MapPage> {
     _saveTransformPrefs();
     _transform.removeListener(_onTransformChanged);
     _transform.dispose();
+    _zoomController.dispose();
     super.dispose();
   }
 
@@ -77,9 +108,33 @@ class _MapPageState extends State<MapPage> {
     final m1 = vmath.Matrix4.identity()
       ..translate(t1x, t1y)
       ..scale(s1);
-    setState(() {
-      _transform.value = m1;
-    });
+    _animateTransform(m1);
+  }
+
+  void _animateTransform(vmath.Matrix4 target) {
+    final begin = _transform.value.clone();
+    _zoomAnimation = _Matrix4Tween(begin: begin, end: target)
+        .animate(CurvedAnimation(parent: _zoomController, curve: Curves.easeOutCubic));
+    _zoomController
+      ..reset()
+      ..forward();
+  }
+
+  void _zoomToNade(Nade n, {double targetScale = 2.5}) {
+    final boardBox = _boardKey.currentContext?.findRenderObject() as RenderBox?;
+    final viewerBox = _viewerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (boardBox == null || viewerBox == null) return;
+    final boardSize = boardBox.size;
+    final viewSize = viewerBox.size;
+    final s1 = targetScale.clamp(_minScale, _maxScale).toDouble();
+    final childPoint = Offset(n.toX * boardSize.width, n.toY * boardSize.height);
+    final center = Offset(viewSize.width / 2, viewSize.height / 2);
+    final t1x = center.dx - s1 * childPoint.dx;
+    final t1y = center.dy - s1 * childPoint.dy;
+    final target = vmath.Matrix4.identity()
+      ..translate(t1x, t1y)
+      ..scale(s1);
+    _animateTransform(target);
   }
 
   @override
@@ -192,6 +247,7 @@ class _MapPageState extends State<MapPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: InteractiveViewer(
+                    key: _viewerKey,
                     minScale: _minScale,
                     maxScale: _maxScale,
                     boundaryMargin: const EdgeInsets.all(80),
@@ -199,14 +255,23 @@ class _MapPageState extends State<MapPage> {
                     transformationController: _transform,
                     onInteractionEnd: (_) => _saveTransformPrefs(),
                     child: MapBoard(
+                      key: _boardKey,
                       nades: nades,
                       selected: _selected,
                       onSelect: (n) => setState(() {
                         _selected = (_selected?.id == n.id) ? null : n;
+                        if (_selected != null) {
+                          // Запустить анимированный зум к выбранной точке на следующем кадре
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted || _selected == null) return;
+                            _zoomToNade(_selected!);
+                          });
+                        }
                       }),
                       imageAsset: widget.map.image,
                       favoriteIds: _favorites,
                       showGrid: _showGrid,
+                      scale: _transform.value.getMaxScaleOnAxis(),
                       onLongPressRelative: _coordMode
                           ? (pos) {
                             final text = 'x: ${pos.dx.toStringAsFixed(3)}, y: ${pos.dy.toStringAsFixed(3)}';
