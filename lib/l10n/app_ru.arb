@@ -38,5 +38,10 @@
   "openVideoFailed": "Не удалось открыть ссылку",
   "openVideoError": "Ошибка при открытии ссылки",
 
-  "nadeCount": "ID: {id} • Гранат: {count}"
+  "nadeCount": "ID: {id} • Гранат: {count}",
+  "searchMapsHint": "Поиск карт...",
+  "toggleGrid": "Сетка",
+  "toggleList": "Список",
+  "noResults": "Ничего не найдено",
+  "mapsTitle": "Карты"
 }

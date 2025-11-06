@@ -38,5 +38,10 @@
   "openVideoFailed": "Could not open link",
   "openVideoError": "Error opening link",
 
-  "nadeCount": "ID: {id} • Nades: {count}"
+  "nadeCount": "ID: {id} • Nades: {count}",
+  "searchMapsHint": "Search maps...",
+  "toggleGrid": "Grid view",
+  "toggleList": "List view",
+  "noResults": "Nothing found",
+  "mapsTitle": "Maps"
 }

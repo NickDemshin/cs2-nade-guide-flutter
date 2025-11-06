@@ -123,4 +123,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String nadeCount(Object count, Object id) {
     return 'ID: $id • Гранат: $count';
   }
+
+  @override
+  String get searchMapsHint => 'Поиск карт...';
+
+  @override
+  String get toggleGrid => 'Сетка';
+
+  @override
+  String get toggleList => 'Список';
+
+  @override
+  String get noResults => 'Ничего не найдено';
+
+  @override
+  String get mapsTitle => 'Карты';
 }

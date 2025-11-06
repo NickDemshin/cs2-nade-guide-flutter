@@ -121,4 +121,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String nadeCount(Object count, Object id) {
     return 'ID: $id • Nades: $count';
   }
+
+  @override
+  String get searchMapsHint => 'Search maps...';
+
+  @override
+  String get toggleGrid => 'Grid view';
+
+  @override
+  String get toggleList => 'List view';
+
+  @override
+  String get noResults => 'Nothing found';
+
+  @override
+  String get mapsTitle => 'Maps';
 }

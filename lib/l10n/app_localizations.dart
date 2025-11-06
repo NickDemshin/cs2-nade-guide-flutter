@@ -301,6 +301,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ID: {id} • Nades: {count}'**
   String nadeCount(Object count, Object id);
+
+  /// No description provided for @searchMapsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search maps...'**
+  String get searchMapsHint;
+
+  /// No description provided for @toggleGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid view'**
+  String get toggleGrid;
+
+  /// No description provided for @toggleList.
+  ///
+  /// In en, this message translates to:
+  /// **'List view'**
+  String get toggleList;
+
+  /// No description provided for @noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing found'**
+  String get noResults;
+
+  /// No description provided for @mapsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Maps'**
+  String get mapsTitle;
 }
 
 class _AppLocalizationsDelegate
