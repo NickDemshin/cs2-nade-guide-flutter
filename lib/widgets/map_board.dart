@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/nade.dart';
 
-class MapBoard extends StatelessWidget {
+class MapBoard extends StatefulWidget {
   final List<Nade> nades;
   final Nade? selected;
   final ValueChanged<Nade> onSelect;
@@ -23,86 +23,165 @@ class MapBoard extends StatelessWidget {
   });
 
   @override
+  State<MapBoard> createState() => _MapBoardState();
+}
+
+class _MapBoardState extends State<MapBoard> {
+  Size? _imageSize;
+  ImageStream? _stream;
+  ImageStreamListener? _listener;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _resolveImage();
+  }
+
+  @override
+  void didUpdateWidget(covariant MapBoard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageAsset != widget.imageAsset) {
+      _resolveImage();
+    }
+  }
+
+  void _resolveImage() {
+    _imageSize = null;
+    _removeImageListener();
+    if (widget.imageAsset == null) return;
+    final provider = AssetImage(widget.imageAsset!);
+    final stream = provider.resolve(createLocalImageConfiguration(context));
+    _listener = ImageStreamListener((ImageInfo info, bool _) {
+      setState(() {
+        _imageSize = Size(
+          info.image.width.toDouble(),
+          info.image.height.toDouble(),
+        );
+      });
+    });
+    stream.addListener(_listener!);
+    _stream = stream;
+  }
+
+  void _removeImageListener() {
+    if (_stream != null && _listener != null) {
+      _stream!.removeListener(_listener!);
+    }
+    _stream = null;
+    _listener = null;
+  }
+
+  @override
+  void dispose() {
+    _removeImageListener();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          final h = constraints.maxHeight;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final hasImage = widget.imageAsset != null;
+        final aspect = (_imageSize != null && _imageSize!.height != 0)
+            ? (_imageSize!.width / _imageSize!.height)
+            : 1.0;
 
-          return GestureDetector(
-            onLongPressStart: (details) {
-              if (onLongPressRelative == null) return;
-              final local = details.localPosition;
-              final nx = (local.dx / w).clamp(0.0, 1.0);
-              final ny = (local.dy / h).clamp(0.0, 1.0);
-              onLongPressRelative!(Offset(nx, ny));
-            },
-            child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Фон: изображение карты если задано, иначе тёмный фон
-              Positioned.fill(
-                child: imageAsset != null
-                    ? Image.asset(
-                        imageAsset!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stack) => Container(color: const Color(0xFF1E1E1E)),
-                      )
-                    : Container(color: const Color(0xFF1E1E1E)),
-              ),
-              // Лёгкая сетка поверх фона (для ориентира)
-              if (showGrid) CustomPaint(painter: _GridPainter()),
+        // Fit image into available box preserving aspect (contain)
+        double maxW = constraints.maxWidth;
+        double maxH = constraints.maxHeight;
+        if (!maxW.isFinite) maxW = 300; // безопасный дефолт
+        if (!maxH.isFinite) maxH = 300;
+        double w = maxW;
+        double h = w / aspect;
+        if (h > maxH) {
+          h = maxH;
+          w = h * aspect;
+        }
+        final canvasW = w;
+        final canvasH = h;
 
-              // Линия от from -> to для выбранной гранаты
-              if (selected != null)
-                CustomPaint(
-                  painter: _LinePainter(
-                    from: Offset(selected!.fromX * w, selected!.fromY * h),
-                    to: Offset(selected!.toX * w, selected!.toY * h),
+        return Center(
+          child: SizedBox(
+            width: canvasW,
+            height: canvasH,
+            child: GestureDetector(
+              onLongPressStart: (details) {
+                if (widget.onLongPressRelative == null) return;
+                final local = details.localPosition;
+                final nx = (local.dx / canvasW).clamp(0.0, 1.0);
+                final ny = (local.dy / canvasH).clamp(0.0, 1.0);
+                widget.onLongPressRelative!(Offset(nx, ny));
+              },
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Фон: изображение карты если задано, иначе тёмный фон
+                  Positioned.fill(
+                    child: hasImage
+                        ? Image.asset(
+                            widget.imageAsset!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stack) => Container(color: const Color(0xFF1E1E1E)),
+                          )
+                        : Container(color: const Color(0xFF1E1E1E)),
                   ),
-                ),
+                  // Лёгкая сетка поверх фона (для ориентира)
+                  if (widget.showGrid) CustomPaint(painter: _GridPainter()),
 
-              // Все точки приземления (to)
-              ...nades.map((n) {
-                final x = n.toX * w;
-                final y = n.toY * h;
-                final isSel = n.id == selected?.id;
-                final isFav = favoriteIds?.contains(n.id) ?? false;
-                return Positioned(
-                  left: x - 10,
-                  top: y - 10,
-                  child: Tooltip(
-                    message: '${nadeTypeLabel(n.type)}: ${n.title}',
-                    child: _Marker(
-                      color: _typeColor(n.type),
-                      label: nadeTypeLabel(n.type)[0],
-                      selected: isSel,
-                      favorite: isFav,
-                      onTap: () => onSelect(n),
+                  // Линия от from -> to для выбранной гранаты
+                  if (widget.selected != null)
+                    CustomPaint(
+                      painter: _LinePainter(
+                        from: Offset(widget.selected!.fromX * canvasW, widget.selected!.fromY * canvasH),
+                        to: Offset(widget.selected!.toX * canvasW, widget.selected!.toY * canvasH),
+                      ),
                     ),
-                  ),
-                );
-              }),
 
-              // Точка старта броска для выбранной
-              if (selected != null)
-                Positioned(
-                  left: selected!.fromX * w - 10,
-                  top: selected!.fromY * h - 10,
-                  child: _Marker(
-                    color: Colors.amber,
-                    label: 'S',
-                    selected: true,
-                    onTap: () {},
-                  ),
+                  // Все точки приземления (to)
+                  ...widget.nades.map((n) {
+                    final x = n.toX * canvasW;
+                    final y = n.toY * canvasH;
+                    final isSel = n.id == widget.selected?.id;
+                    final isFav = widget.favoriteIds?.contains(n.id) ?? false;
+                    return Positioned(
+                      left: x - 10,
+                      top: y - 10,
+                      child: Tooltip(
+                        message: '${nadeTypeLabel(n.type)}: ${n.title}',
+                        child: _Marker(
+                          color: _typeColor(n.type),
+                          label: nadeTypeLabel(n.type)[0],
+                          selected: isSel,
+                          favorite: isFav,
+                          onTap: () => widget.onSelect(n),
+                        ),
+                      ),
+                    );
+                  }),
+
+                  // Точка старта броска для выбранной
+                  if (widget.selected != null)
+                    Positioned(
+                      left: widget.selected!.fromX * canvasW - 10,
+                      top: widget.selected!.fromY * canvasH - 10,
+                      child: _Marker(
+                        color: Colors.amber,
+                        label: 'S',
+                        selected: true,
+                        onTap: () {},
+                      ),
+                    ),
+                ],
               ),
-            ],
+            ),
           ),
         );
-        },
-      ),
+      },
     );
   }
 

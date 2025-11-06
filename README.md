@@ -1,16 +1,86 @@
-# flutter_application_1
+# CS Nade Guide (Flutter)
 
-A new Flutter project.
+Приложение‑гайд по гранатам для карт CS2. Показывает точки приземления и места броска на схеме карты, позволяет фильтровать по типу и стороне, отмечать избранное и открывать видео.
 
-## Getting Started
+## Возможности
+- Список карт и счётчик гранат на каждую.
+- Экран карты: точки приземления, линия «откуда → куда», панорамирование/масштабирование.
+- Фильтры: по типу гранаты (Smoke/Flash/Molotov/HE) и по стороне (T/CT/Both), «только избранные».
+- Избранное сохраняется локально (SharedPreferences).
+- Открытие видео‑гайда во внешнем приложении.
+- Режим «координаты»: долгий тап по карте копирует нормированные координаты (0..1) в буфер обмена — удобно для добавления новых точек.
 
-This project is a starting point for a Flutter application.
+## Структура проекта (важные файлы)
+- `lib/main.dart` — вход приложения.
+- `lib/pages/home_page.dart` — список карт.
+- `lib/pages/map_page.dart` — экран карты, фильтры, избранное, детали, режим координат.
+- `lib/widgets/map_board.dart` — отрисовка фона, сетки, маркеров и линии.
+- `lib/models/cs_map.dart`, `lib/models/nade.dart` — модели данных.
+- `lib/data/nades_repository.dart` — загрузка данных из ассетов.
+- `assets/data/` — JSON‑данные карт и гранат.
+- `assets/images/maps/` — фоновые изображения карт (png).
 
-A few resources to get you started if this is your first Flutter project:
+## Данные и формат JSON
+Ассеты подключены в `pubspec.yaml` (директории `assets/data/` и `assets/images/maps/`).
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Карты: `assets/data/maps.json`
+```json
+{
+  "maps": [
+    { "id": "mirage", "name": "Mirage", "image": "assets/images/maps/mirage.png" },
+    { "id": "inferno", "name": "Inferno" }
+  ]
+}
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Гранаты: `assets/data/nades_<mapId>.json` (пример `nades_mirage.json`)
+```json
+{
+  "nades": [
+    {
+      "id": "mirage_smoke_window_tspawn",
+      "title": "Окно из респа T",
+      "type": "smoke",            // smoke | flash | molotov | he
+      "side": "T",                 // T | CT | Both
+      "from": "Респаун T",
+      "to": "Окно мида",
+      "technique": "jumpthrow",
+      "fromX": 0.15, "fromY": 0.85, // 0..1 — нормированные координаты на карте
+      "toX": 0.52,   "toY": 0.35,
+      "videoUrl": "https://…",
+      "description": "Комментарий"
+    }
+  ]
+}
+```
+
+Нормированные координаты: 0 — левая/верхняя граница, 1 — правая/нижняя. Визуализация использует одинаковое соотношение сторон (1:1); рекомендуется подготавливать квадратные схемы карт.
+
+## Как добавить новую карту и точки
+1) Картинка (необязательно): положите файл в `assets/images/maps/` (например, `anubis.png`). 1024×1024 подойдёт.
+2) Добавьте запись в `assets/data/maps.json`:
+```json
+{ "id": "anubis", "name": "Anubis", "image": "assets/images/maps/anubis.png" }
+```
+3) Создайте `assets/data/nades_anubis.json` с массивом `nades` по схеме выше.
+4) Hot reload или перезапуск — карта появится в списке.
+
+Подсказка: включите иконку «Координаты» на экране карты, затем долгим тапом по схеме копируйте `x/y` в буфер — используйте значения для `fromX/fromY` и `toX/toY` в JSON.
+
+## Сборка и запуск
+Требуется Flutter SDK (см. `environment.sdk` в `pubspec.yaml`).
+
+Команды:
+- `flutter pub get`
+- `flutter run`
+
+## Частые проблемы
+- Пустой экран карты: проверьте, что для карты существует `assets/data/nades_<id>.json` и JSON корректный.
+- Фон не отображается: проверьте путь `image` в `maps.json` и наличие файла в `assets/images/maps/`.
+- Открытие видео: для Android/iOS требуется наличие внешнего браузера/YouTube‑клиента.
+
+## Дальнейшие улучшения (идеї)
+- Адаптивный аспект карты по реальному изображению (не только 1:1).
+- Экран «Избранное» и глобальный поиск по гранатам.
+- Загрузка данных из удалённого JSON с кэшированием и офлайн‑фолбэком.
+- Небольшие тесты парсинга моделей и репозитория.

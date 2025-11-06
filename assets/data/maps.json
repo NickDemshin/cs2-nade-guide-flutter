@@ -7,7 +7,8 @@
     },
     {
       "id": "inferno",
-      "name": "Inferno"
+      "name": "Inferno",
+      "image": "assets/images/maps/inferno.png"
     }
   ]
 }
