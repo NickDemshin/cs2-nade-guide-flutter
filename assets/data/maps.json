@@ -1,0 +1,9 @@
+{
+  "maps": [
+    {
+      "id": "mirage",
+      "name": "Mirage",
+      "image": "assets/images/maps/mirage.png"
+    }
+  ]
+}

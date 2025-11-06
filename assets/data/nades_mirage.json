@@ -1,0 +1,49 @@
+{
+  "nades": [
+    {
+      "id": "mirage_smoke_window_tspawn",
+      "title": "Окно из респа T",
+      "type": "smoke",
+      "side": "T",
+      "from": "Респаун T",
+      "to": "Окно мида",
+      "technique": "jumpthrow",
+      "fromX": 0.15,
+      "fromY": 0.85,
+      "toX": 0.52,
+      "toY": 0.35,
+      "videoUrl": "https://youtu.be/dQw4w9WgXcQ",
+      "description": "Прижмись к стене, прицелься по метке и используй jumpthrow."
+    },
+    {
+      "id": "mirage_flash_mid_top",
+      "title": "Флеш на мид (верх)",
+      "type": "flash",
+      "side": "Both",
+      "from": "Топ мида",
+      "to": "Мид",
+      "technique": "stand",
+      "fromX": 0.48,
+      "fromY": 0.18,
+      "toX": 0.50,
+      "toY": 0.42,
+      "videoUrl": "https://youtu.be/9bZkp7q19f0",
+      "description": "Быстрая флешка для выхода на мид."
+    },
+    {
+      "id": "mirage_molo_window_short",
+      "title": "Молотов в окно с шорта",
+      "type": "molotov",
+      "side": "T",
+      "from": "Шорт",
+      "to": "Окно",
+      "technique": "run",
+      "fromX": 0.62,
+      "fromY": 0.55,
+      "toX": 0.56,
+      "toY": 0.34,
+      "videoUrl": "",
+      "description": "Поджигает окно, выкуривая снайпера."
+    }
+  ]
+}
