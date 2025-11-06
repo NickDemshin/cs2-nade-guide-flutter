@@ -4,6 +4,10 @@
       "id": "mirage",
       "name": "Mirage",
       "image": "assets/images/maps/mirage.png"
+    },
+    {
+      "id": "inferno",
+      "name": "Inferno"
     }
   ]
 }

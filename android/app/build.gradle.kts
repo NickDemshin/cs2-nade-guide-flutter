@@ -8,16 +8,16 @@ plugins {
 android {
     namespace = "com.example.flutter_application_1"
     compileSdk = flutter.compileSdkVersion
-    // Use Flutter-managed NDK version; plugins pinned to older versions
-    ndkVersion = flutter.ndkVersion
+    // Use installed NDK version to satisfy plugin requirements
+    ndkVersion = "29.0.14206865"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -42,4 +42,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Ensure Kotlin uses JDK 17 toolchain
+kotlin {
+    jvmToolchain(17)
 }

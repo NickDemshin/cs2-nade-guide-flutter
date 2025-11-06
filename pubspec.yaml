@@ -34,15 +34,13 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  # Pin plugins to versions compatible with Android NDK 26
-  url_launcher: 6.2.2
-  shared_preferences: 2.2.2
+  # Use current plugin versions compatible with latest embedding/NDK
+  url_launcher: ^6.3.0
+  shared_preferences: ^2.3.2
   vector_math: ^2.1.4
 
-dependency_overrides:
-  # Ensure Android federated implementations resolve to older variants
-  url_launcher_android: 6.2.2
-  shared_preferences_android: 2.2.0
+## Removed dependency_overrides that pinned outdated Android implementations
+## to avoid v1 embedding and NDK mismatch issues.
 
 dev_dependencies:
   flutter_test:

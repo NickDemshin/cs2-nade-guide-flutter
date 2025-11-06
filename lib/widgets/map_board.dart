@@ -9,6 +9,7 @@ class MapBoard extends StatelessWidget {
   final bool showGrid;
   final String? imageAsset; // фоновое изображение карты
   final Set<String>? favoriteIds; // набор избранных ID для визуальной пометки
+  final ValueChanged<Offset>? onLongPressRelative; // нормированные координаты 0..1
 
   const MapBoard({
     super.key,
@@ -18,6 +19,7 @@ class MapBoard extends StatelessWidget {
     this.showGrid = true,
     this.imageAsset,
     this.favoriteIds,
+    this.onLongPressRelative,
   });
 
   @override
@@ -29,7 +31,15 @@ class MapBoard extends StatelessWidget {
           final w = constraints.maxWidth;
           final h = constraints.maxHeight;
 
-          return Stack(
+          return GestureDetector(
+            onLongPressStart: (details) {
+              if (onLongPressRelative == null) return;
+              final local = details.localPosition;
+              final nx = (local.dx / w).clamp(0.0, 1.0);
+              final ny = (local.dy / h).clamp(0.0, 1.0);
+              onLongPressRelative!(Offset(nx, ny));
+            },
+            child: Stack(
             fit: StackFit.expand,
             children: [
               // Фон: изображение карты если задано, иначе тёмный фон
@@ -63,12 +73,15 @@ class MapBoard extends StatelessWidget {
                 return Positioned(
                   left: x - 10,
                   top: y - 10,
-                  child: _Marker(
-                    color: _typeColor(n.type),
-                    label: nadeTypeLabel(n.type)[0],
-                    selected: isSel,
-                    favorite: isFav,
-                    onTap: () => onSelect(n),
+                  child: Tooltip(
+                    message: '${nadeTypeLabel(n.type)}: ${n.title}',
+                    child: _Marker(
+                      color: _typeColor(n.type),
+                      label: nadeTypeLabel(n.type)[0],
+                      selected: isSel,
+                      favorite: isFav,
+                      onTap: () => onSelect(n),
+                    ),
                   ),
                 );
               }),
@@ -84,9 +97,10 @@ class MapBoard extends StatelessWidget {
                     selected: true,
                     onTap: () {},
                   ),
-                ),
+              ),
             ],
-          );
+          ),
+        );
         },
       ),
     );
@@ -136,12 +150,12 @@ class _Marker extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.9),
+              color: color.withOpacity(0.9),
               shape: BoxShape.circle,
               boxShadow: [
                 if (selected)
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
+                    color: Colors.black.withOpacity(0.25),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),
@@ -185,7 +199,7 @@ class _GridPainter extends CustomPainter {
     }
 
     final border = Paint()
-      ..color = Colors.white.withValues(alpha: 0.35)
+      ..color = Colors.white.withOpacity(0.35)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawRect(Offset.zero & size, border);
