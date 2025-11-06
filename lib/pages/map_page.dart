@@ -26,6 +26,8 @@ class _MapPageState extends State<MapPage> {
   String? _filterSide; // null = все, иначе 'T' | 'CT' | 'Both'
   Nade? _selected;
   final _transform = TransformationController();
+  static const double _minScale = 1.0;
+  static const double _maxScale = 5.0;
   bool _showGrid = true;
   bool _onlyFavorites = false;
   final Set<String> _favorites = <String>{};
@@ -37,12 +39,47 @@ class _MapPageState extends State<MapPage> {
     _futureNades = _repo.getNadesByMap(widget.map.id);
     _loadUiPrefs();
     _loadFavorites();
+    _transform.addListener(_onTransformChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.map.image != null) {
+      precacheImage(AssetImage(widget.map.image!), context);
+    }
   }
 
   @override
   void dispose() {
+    _saveTransformPrefs();
+    _transform.removeListener(_onTransformChanged);
     _transform.dispose();
     super.dispose();
+  }
+
+  void _onTransformChanged() {
+    // Можно добавить дебаунс при желании
+  }
+
+  void _zoomAt(Offset focalLocal, {double factor = 2.0}) {
+    final m0 = _transform.value;
+    final s0 = m0.getMaxScaleOnAxis();
+    final s1 = (s0 * factor).clamp(_minScale, _maxScale).toDouble();
+    if (s1 == s0) return;
+    final tx0 = m0.storage[12];
+    final ty0 = m0.storage[13];
+    final fx = focalLocal.dx;
+    final fy = focalLocal.dy;
+    // Keep the focal point under the same viewport pixel: s0*fx + tx0 == s1*fx + t1
+    final t1x = tx0 + fx * (s0 - s1);
+    final t1y = ty0 + fy * (s0 - s1);
+    final m1 = vmath.Matrix4.identity()
+      ..translate(t1x, t1y)
+      ..scale(s1);
+    setState(() {
+      _transform.value = m1;
+    });
   }
 
   @override
@@ -149,16 +186,18 @@ class _MapPageState extends State<MapPage> {
                   _saveUiPrefs();
                 },
               ),
+              _LegendBar(),
               const Divider(height: 1),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: InteractiveViewer(
-                    minScale: 1.0,
-                    maxScale: 5.0,
+                    minScale: _minScale,
+                    maxScale: _maxScale,
                     boundaryMargin: const EdgeInsets.all(80),
                     clipBehavior: Clip.none,
                     transformationController: _transform,
+                    onInteractionEnd: (_) => _saveTransformPrefs(),
                     child: MapBoard(
                       nades: nades,
                       selected: _selected,
@@ -170,15 +209,23 @@ class _MapPageState extends State<MapPage> {
                       showGrid: _showGrid,
                       onLongPressRelative: _coordMode
                           ? (pos) {
-                              final text = 'x: ${pos.dx.toStringAsFixed(3)}, y: ${pos.dy.toStringAsFixed(3)}';
-                              Clipboard.setData(ClipboardData(text: text));
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Координаты скопированы: $text')),
-                                );
-                              }
+                            final text = 'x: ${pos.dx.toStringAsFixed(3)}, y: ${pos.dy.toStringAsFixed(3)}';
+                            Clipboard.setData(ClipboardData(text: text));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Координаты скопированы: $text')),
+                              );
                             }
+                          }
                           : null,
+                      onDoubleTapLocal: (pos) {
+                        final s = _transform.value.getMaxScaleOnAxis();
+                        if (s >= 2.5) {
+                          setState(() => _transform.value = vmath.Matrix4.identity());
+                        } else {
+                          _zoomAt(pos, factor: 2.0);
+                        }
+                      },
                     ),
                   ),
                 ),
@@ -231,6 +278,9 @@ class _MapPageState extends State<MapPage> {
     final sg = prefs.getBool('ui_${key}_showGrid');
     final favOnly = prefs.getBool('ui_${key}_onlyFavorites');
     final sideIdx = prefs.getInt('ui_${key}_filterSide');
+    final scale = prefs.getDouble('ui_${key}_scale');
+    final tx = prefs.getDouble('ui_${key}_tx');
+    final ty = prefs.getDouble('ui_${key}_ty');
     if (!mounted) return;
     setState(() {
       if (idx != null && idx >= 0 && idx < NadeType.values.length) {
@@ -254,6 +304,12 @@ class _MapPageState extends State<MapPage> {
           default:
             _filterSide = null;
         }
+      }
+      if (scale != null && tx != null && ty != null) {
+        final m = vmath.Matrix4.identity()
+          ..translate(tx, ty)
+          ..scale(scale);
+        _transform.value = m;
       }
     });
   }
@@ -281,6 +337,18 @@ class _MapPageState extends State<MapPage> {
       sideIdx = -1;
     }
     await prefs.setInt('ui_${key}_filterSide', sideIdx);
+  }
+
+  Future<void> _saveTransformPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _mapKey();
+    final m = _transform.value;
+    final scale = m.getMaxScaleOnAxis();
+    final dx = m.storage[12];
+    final dy = m.storage[13];
+    await prefs.setDouble('ui_${key}_scale', scale);
+    await prefs.setDouble('ui_${key}_tx', dx);
+    await prefs.setDouble('ui_${key}_ty', dy);
   }
 
   String _mapKey() => widget.map.id;
@@ -360,6 +428,44 @@ class _SideFilterBar extends StatelessWidget {
         },
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemCount: items.length,
+      ),
+    );
+  }
+}
+
+class _LegendBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    Color typeColor(NadeType t) {
+      switch (t) {
+        case NadeType.smoke:
+          return Colors.grey;
+        case NadeType.flash:
+          return Colors.lightBlue;
+        case NadeType.molotov:
+          return Colors.deepOrange;
+        case NadeType.he:
+          return Colors.green;
+      }
+    }
+
+    Widget dot(Color c) => Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1)),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Wrap(
+        spacing: 16,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Row(children: [dot(typeColor(NadeType.smoke)), const SizedBox(width: 6), const Text('Smoke')]),
+          Row(children: [dot(typeColor(NadeType.flash)), const SizedBox(width: 6), const Text('Flash')]),
+          Row(children: [dot(typeColor(NadeType.molotov)), const SizedBox(width: 6), const Text('Molotov')]),
+          Row(children: [dot(typeColor(NadeType.he)), const SizedBox(width: 6), const Text('HE')]),
+        ],
       ),
     );
   }

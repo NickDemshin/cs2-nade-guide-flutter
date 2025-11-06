@@ -10,6 +10,7 @@ class MapBoard extends StatefulWidget {
   final String? imageAsset; // фоновое изображение карты
   final Set<String>? favoriteIds; // набор избранных ID для визуальной пометки
   final ValueChanged<Offset>? onLongPressRelative; // нормированные координаты 0..1
+  final ValueChanged<Offset>? onDoubleTapLocal; // локальная позиция double-tap
 
   const MapBoard({
     super.key,
@@ -20,6 +21,7 @@ class MapBoard extends StatefulWidget {
     this.imageAsset,
     this.favoriteIds,
     this.onLongPressRelative,
+    this.onDoubleTapLocal,
   });
 
   @override
@@ -116,6 +118,11 @@ class _MapBoardState extends State<MapBoard> {
                 final nx = (local.dx / canvasW).clamp(0.0, 1.0);
                 final ny = (local.dy / canvasH).clamp(0.0, 1.0);
                 widget.onLongPressRelative!(Offset(nx, ny));
+              },
+              onDoubleTapDown: (details) {
+                if (widget.onDoubleTapLocal != null) {
+                  widget.onDoubleTapLocal!(details.localPosition);
+                }
               },
               child: Stack(
                 fit: StackFit.expand,
