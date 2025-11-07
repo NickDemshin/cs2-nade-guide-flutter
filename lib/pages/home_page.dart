@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/nades_repository.dart';
 import '../models/cs_map.dart';
@@ -14,17 +15,21 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   final _repo = const NadesRepository();
   Future<List<CsMap>>? _futureMaps;
   final Map<String, Future<int>> _nadeCountFutures = <String, Future<int>>{};
   String _query = '';
   bool _grid = true;
+  late final TabController _tabs;
+  final Set<String> _favoriteMaps = <String>{};
 
   @override
   void initState() {
     super.initState();
     _reload();
+    _tabs = TabController(length: 3, vsync: this)..addListener(() => setState(() {}));
+    _loadFavoriteMaps();
   }
 
   void _reload() {
@@ -46,6 +51,14 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.homeTitle),
+        bottom: TabBar(
+          controller: _tabs,
+          tabs: [
+            Tab(text: l.tabsTournament),
+            Tab(text: l.tabsOthers),
+            Tab(text: l.tabsFavorites),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: _grid ? l.toggleList : l.toggleGrid,
@@ -53,7 +66,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () => setState(() => _grid = !_grid),
           ),
           PopupMenuButton<String>(
-            tooltip: 'Language',
+            tooltip: l.languageTooltip,
             icon: const Icon(Icons.language),
             onSelected: (code) {
               if (code == 'ru') {
@@ -92,12 +105,21 @@ class _HomePageState extends State<HomePage> {
             final q = _query.toLowerCase();
             maps = maps.where((m) => m.name.toLowerCase().contains(q) || m.id.toLowerCase().contains(q)).toList();
           }
+          // Фильтрация по вкладке
+          final idx = _tabs.index;
+          if (idx == 0) {
+            maps = maps.where((m) => m.tournament).toList();
+          } else if (idx == 1) {
+            maps = maps.where((m) => !m.tournament).toList();
+          } else if (idx == 2) {
+            maps = maps.where((m) => _favoriteMaps.contains(m.id)).toList();
+          }
           if (maps.isEmpty) {
             return Center(child: Text(l.noMaps));
           }
           final content = _grid
-              ? _MapsGrid(maps: maps, nadeCount: _nadeCount, onTap: _openMap)
-              : _MapsList(maps: maps, nadeCount: _nadeCount, onTap: _openMap);
+              ? _MapsGrid(maps: maps, nadeCount: _nadeCount, onTap: _openMap, isFav: _isMapFav, toggleFav: _toggleMapFav)
+              : _MapsList(maps: maps, nadeCount: _nadeCount, onTap: _openMap, isFav: _isMapFav, toggleFav: _toggleMapFav);
           return RefreshIndicator(
             onRefresh: () async {
               final fut = _repo.getMaps();
@@ -139,13 +161,43 @@ class _HomePageState extends State<HomePage> {
   void _openMap(CsMap m) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => MapPage(map: m)));
   }
+
+  bool _isMapFav(String id) => _favoriteMaps.contains(id);
+  Future<void> _loadFavoriteMaps() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('favorite_maps') ?? const <String>[];
+    if (!mounted) return;
+    setState(() {
+      _favoriteMaps
+        ..clear()
+        ..addAll(list);
+    });
+  }
+
+  Future<void> _saveFavoriteMaps() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('favorite_maps', _favoriteMaps.toList());
+  }
+
+  void _toggleMapFav(String id) {
+    setState(() {
+      if (_favoriteMaps.contains(id)) {
+        _favoriteMaps.remove(id);
+      } else {
+        _favoriteMaps.add(id);
+      }
+    });
+    _saveFavoriteMaps();
+  }
 }
 
 class _MapsList extends StatelessWidget {
   final List<CsMap> maps;
   final Future<int> Function(String) nadeCount;
   final void Function(CsMap) onTap;
-  const _MapsList({required this.maps, required this.nadeCount, required this.onTap});
+  final bool Function(String) isFav;
+  final void Function(String) toggleFav;
+  const _MapsList({required this.maps, required this.nadeCount, required this.onTap, required this.isFav, required this.toggleFav});
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +218,16 @@ class _MapsList extends StatelessWidget {
                       return Text(l.nadeCount(count, m.id));
             },
           ),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(isFav(m.id) ? Icons.star : Icons.star_border, color: isFav(m.id) ? Colors.amber : null),
+                onPressed: () => toggleFav(m.id),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
           onTap: () => onTap(m),
         );
       },
@@ -178,7 +239,9 @@ class _MapsGrid extends StatelessWidget {
   final List<CsMap> maps;
   final Future<int> Function(String) nadeCount;
   final void Function(CsMap) onTap;
-  const _MapsGrid({required this.maps, required this.nadeCount, required this.onTap});
+  final bool Function(String) isFav;
+  final void Function(String) toggleFav;
+  const _MapsGrid({required this.maps, required this.nadeCount, required this.onTap, required this.isFav, required this.toggleFav});
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +256,13 @@ class _MapsGrid extends StatelessWidget {
       sliver: SliverGrid(
         gridDelegate: grid,
         delegate: SliverChildBuilderDelegate(
-          (context, index) => _MapCard(map: maps[index], countFuture: nadeCount(maps[index].id), onTap: onTap),
+          (context, index) => _MapCard(
+            map: maps[index],
+            countFuture: nadeCount(maps[index].id),
+            onTap: onTap,
+            isFav: isFav(maps[index].id),
+            toggleFav: () => toggleFav(maps[index].id),
+          ),
           childCount: maps.length,
         ),
       ),
@@ -206,7 +275,9 @@ class _MapCard extends StatelessWidget {
   final CsMap map;
   final Future<int> countFuture;
   final void Function(CsMap) onTap;
-  const _MapCard({required this.map, required this.countFuture, required this.onTap});
+  final bool isFav;
+  final VoidCallback toggleFav;
+  const _MapCard({required this.map, required this.countFuture, required this.onTap, this.isFav = false, required this.toggleFav});
 
   @override
   Widget build(BuildContext context) {
@@ -238,6 +309,16 @@ class _MapCard extends StatelessWidget {
                     end: Alignment.topCenter,
                     colors: [Color(0xAA000000), Color(0x33000000), Color(0x00000000)],
                   ),
+                ),
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.25)),
+                  onPressed: toggleFav,
+                  icon: Icon(isFav ? Icons.star : Icons.star_border, color: isFav ? Colors.amber : Colors.white),
                 ),
               ),
               Positioned(

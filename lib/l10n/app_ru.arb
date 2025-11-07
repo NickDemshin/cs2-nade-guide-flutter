@@ -46,6 +46,10 @@
   "mapsTitle": "Карты",
   "langRussian": "Русский",
   "langEnglish": "Английский",
+  "tabsTournament": "Турнирные",
+  "tabsOthers": "Остальные",
+  "tabsFavorites": "Избранные",
+  "languageTooltip": "Язык",
   "addNade": "Добавить гранату",
   "edit": "Редактировать",
   "delete": "Удалить",
@@ -62,5 +66,8 @@
   "fieldTechnique": "Техника (stand/run/jumpthrow...)",
   "fieldVideoUrl": "Видео URL (необязательно)",
   "fieldDescription": "Описание (необязательно)",
-  "save": "Сохранить"
+  "save": "Сохранить",
+  "infoFrom": "Откуда бросать: {from}",
+  "infoTo": "Куда прилетает: {to}",
+  "fromTo": "От: {from} → К: {to}"
 }

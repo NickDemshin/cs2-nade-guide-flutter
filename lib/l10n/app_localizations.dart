@@ -344,6 +344,30 @@ abstract class AppLocalizations {
   /// **'English'**
   String get langEnglish;
 
+  /// No description provided for @tabsTournament.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournament'**
+  String get tabsTournament;
+
+  /// No description provided for @tabsOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get tabsOthers;
+
+  /// No description provided for @tabsFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get tabsFavorites;
+
+  /// No description provided for @languageTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageTooltip;
+
   /// No description provided for @addNade.
   ///
   /// In en, this message translates to:
@@ -445,6 +469,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get save;
+
+  /// No description provided for @infoFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Throw from: {from}'**
+  String infoFrom(Object from);
+
+  /// No description provided for @infoTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Lands at: {to}'**
+  String infoTo(Object to);
+
+  /// No description provided for @fromTo.
+  ///
+  /// In en, this message translates to:
+  /// **'From: {from} → To: {to}'**
+  String fromTo(Object from, Object to);
 }
 
 class _AppLocalizationsDelegate

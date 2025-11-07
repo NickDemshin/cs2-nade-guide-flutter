@@ -146,6 +146,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get langEnglish => 'Английский';
 
   @override
+  String get tabsTournament => 'Турнирные';
+
+  @override
+  String get tabsOthers => 'Остальные';
+
+  @override
+  String get tabsFavorites => 'Избранные';
+
+  @override
+  String get languageTooltip => 'Язык';
+
+  @override
   String get addNade => 'Добавить гранату';
 
   @override
@@ -195,4 +207,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get save => 'Сохранить';
+
+  @override
+  String infoFrom(Object from) {
+    return 'Откуда бросать: $from';
+  }
+
+  @override
+  String infoTo(Object to) {
+    return 'Куда прилетает: $to';
+  }
+
+  @override
+  String fromTo(Object from, Object to) {
+    return 'От: $from → К: $to';
+  }
 }

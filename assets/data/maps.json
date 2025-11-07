@@ -3,18 +3,20 @@
     {
       "id": "mirage",
       "name": "Mirage",
-      "image": "assets/images/maps/mirage.png"
+      "image": "assets/images/maps/mirage.png",
+      "tournament": true
     },
     {
       "id": "inferno",
       "name": "Inferno",
-      "image": "assets/images/maps/inferno.png"
+      "image": "assets/images/maps/inferno.png",
+      "tournament": true
     },
-    { "id": "anubis",  "name": "Anubis",  "image": "assets/images/maps/anubis.png" },
-    { "id": "ancient", "name": "Ancient", "image": "assets/images/maps/ancient.png" },
-    { "id": "dust2",   "name": "Dust II", "image": "assets/images/maps/dust2.png" },
-    { "id": "nuke",    "name": "Nuke", "image": "assets/images/maps/nuke.png" },
-    { "id": "overpass","name": "Overpass", "image": "assets/images/maps/overpass.png" },
+    { "id": "anubis",  "name": "Anubis",  "image": "assets/images/maps/anubis.png",  "tournament": true },
+    { "id": "ancient", "name": "Ancient", "image": "assets/images/maps/ancient.png",  "tournament": true },
+    { "id": "dust2",   "name": "Dust II", "image": "assets/images/maps/dust2.png",    "tournament": true },
+    { "id": "nuke",    "name": "Nuke", "image": "assets/images/maps/nuke.png",        "tournament": true },
+    { "id": "overpass","name": "Overpass", "image": "assets/images/maps/overpass.png", "tournament": true },
     { "id": "vertigo", "name": "Vertigo", "image": "assets/images/maps/vertigo.png" }
     ,{ "id": "train",   "name": "Train", "image": "assets/images/maps/train.jpg" }
   ]

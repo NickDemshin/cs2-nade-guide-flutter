@@ -144,6 +144,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get langEnglish => 'English';
 
   @override
+  String get tabsTournament => 'Tournament';
+
+  @override
+  String get tabsOthers => 'Others';
+
+  @override
+  String get tabsFavorites => 'Favorites';
+
+  @override
+  String get languageTooltip => 'Language';
+
+  @override
   String get addNade => 'Add grenade';
 
   @override
@@ -193,4 +205,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get save => 'Save';
+
+  @override
+  String infoFrom(Object from) {
+    return 'Throw from: $from';
+  }
+
+  @override
+  String infoTo(Object to) {
+    return 'Lands at: $to';
+  }
+
+  @override
+  String fromTo(Object from, Object to) {
+    return 'From: $from → To: $to';
+  }
 }

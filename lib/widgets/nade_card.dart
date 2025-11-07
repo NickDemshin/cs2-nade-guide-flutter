@@ -24,6 +24,7 @@ class NadeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return ListTile(
       onTap: onTap,
       leading: CircleAvatar(
@@ -31,7 +32,7 @@ class NadeCard extends StatelessWidget {
         child: Text(AppLocalizations.of(context).typeName(nade.type)[0]),
       ),
       title: Text(nade.title),
-      subtitle: Text('От: ${nade.from} → К: ${nade.to}'),
+      subtitle: Text(l.fromTo(nade.from, nade.to)),
       trailing: Chip(
         label: Text(AppLocalizations.of(context).typeName(nade.type)),
         visualDensity: VisualDensity.compact,

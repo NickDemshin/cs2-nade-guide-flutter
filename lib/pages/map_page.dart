@@ -774,8 +774,8 @@ class _SelectedInfo extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Откуда бросать: ${nade.from}'),
-              Text('Куда прилетает: ${nade.to}'),
+              Text(l.infoFrom(nade.from)),
+              Text(l.infoTo(nade.to)),
               if (_localizedDescription(context, nade) != null && _localizedDescription(context, nade)!.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(_localizedDescription(context, nade)!),
@@ -800,13 +800,13 @@ class _SelectedInfo extends StatelessWidget {
                     TextButton.icon(
                       onPressed: onEdit,
                       icon: const Icon(Icons.edit),
-                      label: const Text('Редактировать'),
+                      label: Text(l.edit),
                     ),
                   if (nade.id.startsWith('user_') && onDelete != null)
                     TextButton.icon(
                       onPressed: onDelete,
                       icon: const Icon(Icons.delete_outline),
-                      label: const Text('Удалить'),
+                      label: Text(l.delete),
                     ),
                 ],
               ),
@@ -825,13 +825,13 @@ Future<void> _openVideo(BuildContext context, String url) async {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось открыть ссылку')),
+        SnackBar(content: Text(AppLocalizations.of(context).openVideoFailed)),
       );
     }
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ошибка при открытии ссылки')),
+        SnackBar(content: Text(AppLocalizations.of(context).openVideoError)),
       );
     }
   }

@@ -46,6 +46,10 @@
   "mapsTitle": "Maps",
   "langRussian": "Russian",
   "langEnglish": "English",
+  "tabsTournament": "Tournament",
+  "tabsOthers": "Others",
+  "tabsFavorites": "Favorites",
+  "languageTooltip": "Language",
   "addNade": "Add grenade",
   "edit": "Edit",
   "delete": "Delete",
@@ -62,5 +66,8 @@
   "fieldTechnique": "Technique (stand/run/jumpthrow...)",
   "fieldVideoUrl": "Video URL (optional)",
   "fieldDescription": "Description (optional)",
-  "save": "Save"
+  "save": "Save",
+  "infoFrom": "Throw from: {from}",
+  "infoTo": "Lands at: {to}",
+  "fromTo": "From: {from} → To: {to}"
 }
