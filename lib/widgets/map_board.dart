@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import '../models/nade.dart';
 
@@ -268,26 +269,25 @@ class _MapBoardState extends State<MapBoard> {
                       ),
                     ),
 
-                  // Легенда типов
+                  // Легенда типов — стеклянная панель с чипами
                   if (widget.showLegend)
                     Positioned(
-                      left: 8,
-                      top: 8,
-                      child: Card(
-                        elevation: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              for (final t in _presentTypes(widget.nades)) ...[
-                                Icon(_typeIcon(t), color: _typeColor(t), size: 16),
-                                const SizedBox(width: 4),
-                                Text((widget.typeLabel?.call(t) ?? nadeTypeLabel(t)), style: const TextStyle(fontSize: 12)),
-                                const SizedBox(width: 10),
-                              ],
+                      left: 12,
+                      top: 12,
+                      child: _GlassPanel(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final t in _presentTypes(widget.nades)) ...[
+                              _TypeChip(
+                                icon: _typeIcon(t),
+                                label: (widget.typeLabel?.call(t) ?? nadeTypeLabel(t)),
+                                color: _typeColor(t),
+                              ),
+                              const SizedBox(width: 8),
                             ],
-                          ),
+                          ],
                         ),
                       ),
                     ),
@@ -302,7 +302,9 @@ class _MapBoardState extends State<MapBoard> {
 
   Iterable<NadeType> _presentTypes(List<Nade> nades) {
     final set = <NadeType>{};
-    for (final n in nades) set.add(n.type);
+    for (final n in nades) {
+      set.add(n.type);
+    }
     return set;
   }
 
@@ -604,6 +606,84 @@ class _Marker extends StatelessWidget {
   }
 }
 
+// Небольшая стеклянная панель с блюром и полупрозрачным фоном — для легенд/панелей.
+class _GlassPanel extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets padding;
+
+  const _GlassPanel({
+    required this.child,
+    this.padding = const EdgeInsets.all(8),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const double _radius = 16;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(_radius),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(_radius),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+// Чип для типа гранаты в стиле макета: компактный, с иконкой и ярким цветом типа.
+class _TypeChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _TypeChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TriangleMarkerPainter extends CustomPainter {
   final Color fill;
   final Color border;
@@ -642,7 +722,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final grid = Paint()
-      ..color = const Color(0x22FFFFFF)
+      ..color = const Color(0x1AFFFFFF)
       ..strokeWidth = 1;
     const step = 40.0;
     for (double x = 0; x <= size.width; x += step) {

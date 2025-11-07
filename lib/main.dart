@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/cs2_background.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'pages/home_page.dart';
@@ -22,9 +23,62 @@ class NadeGuideApp extends StatefulWidget {
 class _NadeGuideAppState extends State<NadeGuideApp> {
   @override
   Widget build(BuildContext context) {
+    final darkScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF00E5A8),
+      brightness: Brightness.dark,
+    );
+
     final theme = ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      colorScheme: darkScheme,
+      brightness: Brightness.dark,
       useMaterial3: true,
+      scaffoldBackgroundColor: Colors.transparent,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
+      cardTheme: CardThemeData(
+        color: Colors.white.withValues(alpha: 0.06),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: darkScheme.primary.withValues(alpha: 0.18),
+          foregroundColor: Colors.white,
+          shadowColor: Colors.transparent,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: darkScheme.primary.withValues(alpha: 0.24),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.white.withValues(alpha: 0.08),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: Colors.white.withValues(alpha: 0.08),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+        labelStyle: const TextStyle(color: Colors.white),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
 
     return ValueListenableBuilder<Locale?>(
@@ -36,6 +90,7 @@ class _NadeGuideAppState extends State<NadeGuideApp> {
           home: const HomePage(),
           debugShowCheckedModeBanner: false,
           locale: locale,
+          builder: (context, child) => Cs2Background(child: child ?? const SizedBox.shrink()),
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,

@@ -293,7 +293,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                                   });
                                 },
                           typeLabel: l.typeName,
-                          colorBlindFriendly: _cbFriendly,
+                           colorBlindFriendly: _cbFriendly,
+                           showLegend: false,
                           onLongPressRelative: _coordMode
                               ? (pos) {
                                 final text = 'x: ${pos.dx.toStringAsFixed(3)}, y: ${pos.dy.toStringAsFixed(3)}';
@@ -1154,12 +1155,13 @@ class _CoordPickerState extends State<_CoordPicker> {
           maxScale: 5.0,
           boundaryMargin: const EdgeInsets.all(80),
           clipBehavior: Clip.none,
-          child: MapBoard(
+           child: MapBoard(
             nades: widget.nades,
             onSelect: (_) {},
             selected: null,
             imageAsset: widget.map.image,
             showGrid: true,
+            showLegend: false,
             favoriteIds: const {},
             scale: _transform.value.getMaxScaleOnAxis(),
             typeLabel: (t) => nadeTypeLabel(t),

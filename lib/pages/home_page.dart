@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/glass.dart';
 
 import '../data/nades_repository.dart';
 import '../models/cs_map.dart';
@@ -19,7 +20,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final _repo = const NadesRepository();
   Future<List<CsMap>>? _futureMaps;
   final Map<String, Future<int>> _nadeCountFutures = <String, Future<int>>{};
-  String _query = '';
+  // Поиск отключён — поле убрано
   bool _grid = true;
   late final TabController _tabs;
   final Set<String> _favoriteMaps = <String>{};
@@ -51,6 +52,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return Scaffold(
       appBar: AppBar(
         title: Text(l.homeTitle),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: const GlassContainer(radius: 0, padding: EdgeInsets.zero, child: SizedBox.expand()),
         bottom: TabBar(
           controller: _tabs,
           tabs: [
@@ -100,11 +104,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             return Center(child: Text(l.errorLoading(snapshot.error.toString())));
           }
           var maps = snapshot.data ?? const <CsMap>[];
-          // Поиск по названию/ID
-          if (_query.isNotEmpty) {
-            final q = _query.toLowerCase();
-            maps = maps.where((m) => m.name.toLowerCase().contains(q) || m.id.toLowerCase().contains(q)).toList();
-          }
+          // Поиск отключён
           // Фильтрация по вкладке
           final idx = _tabs.index;
           if (idx == 0) {
@@ -129,20 +129,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                    child: TextField(
-                      onChanged: (v) => setState(() => _query = v),
-                      decoration: InputDecoration(
-                        hintText: l.searchMapsHint,
-                        prefixIcon: const Icon(Icons.search),
-                        filled: true,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      ),
-                    ),
-                  ),
-                ),
+                // Поле поиска удалено
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
