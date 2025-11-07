@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/nade.dart';
 
@@ -181,13 +182,17 @@ class _MapBoardState extends State<MapBoard> {
                         top: y - 10,
                         child: Tooltip(
                           message: '${(widget.typeLabel?.call(n.type) ?? nadeTypeLabel(n.type))}: ${n.title}',
-                          child: _Marker(
-                            color: _typeColor(n.type),
-                            icon: _typeIcon(n.type),
-                            selected: isSel,
-                            scale: widget.scale,
-                            favorite: isFav,
-                            onTap: () => widget.onSelect(n),
+                          child: Semantics(
+                            label: '${(widget.typeLabel?.call(n.type) ?? nadeTypeLabel(n.type))}: ${n.title}',
+                            button: true,
+                            child: _Marker(
+                              color: _typeColor(n.type),
+                              icon: _typeIcon(n.type),
+                              selected: isSel,
+                              scale: widget.scale,
+                              favorite: isFav,
+                              onTap: () => widget.onSelect(n),
+                            ),
                           ),
                         ),
                       );
@@ -198,11 +203,15 @@ class _MapBoardState extends State<MapBoard> {
                         top: y - 12,
                         child: Tooltip(
                           message: '${(widget.typeLabel?.call(c.type) ?? nadeTypeLabel(c.type))} × ${c.items.length}',
-                          child: _ClusterMarker(
-                            color: _typeColor(c.type),
-                            icon: _typeIcon(c.type),
-                            scale: widget.scale,
-                            onTap: () => _openClusterChooser(context, c),
+                          child: Semantics(
+                            label: '${(widget.typeLabel?.call(c.type) ?? nadeTypeLabel(c.type))}',
+                            button: true,
+                            child: _ClusterMarker(
+                              color: _typeColor(c.type),
+                              icon: _typeIcon(c.type),
+                              scale: widget.scale,
+                              onTap: () => _openClusterChooser(context, c),
+                            ),
                           ),
                         ),
                       );
@@ -413,7 +422,10 @@ class _Marker extends StatelessWidget {
     final inv = scale <= 0 ? 1.0 : (1.0 / scale);
     final size = (base * inv).clamp(12.0, 28.0);
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Stack(
         clipBehavior: Clip.none,
         children: [

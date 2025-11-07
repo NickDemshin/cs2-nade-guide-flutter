@@ -45,5 +45,22 @@
   "noResults": "Ничего не найдено",
   "mapsTitle": "Карты",
   "langRussian": "Русский",
-  "langEnglish": "Английский"
+  "langEnglish": "Английский",
+  "addNade": "Добавить гранату",
+  "edit": "Редактировать",
+  "delete": "Удалить",
+  "newNadeTitle": "Новая граната",
+  "editNadeTitle": "Редактировать гранату",
+  "fieldTitle": "Название",
+  "fieldType": "Тип",
+  "fieldSide": "Сторона",
+  "fieldFrom": "Откуда бросать (текст)",
+  "fieldTo": "Куда прилетает (текст)",
+  "fieldToCoords": "Коорд. приземления",
+  "fieldFromCoords": "Коорд. броска",
+  "pickOnMap": "Выбрать на карте",
+  "fieldTechnique": "Техника (stand/run/jumpthrow...)",
+  "fieldVideoUrl": "Видео URL (необязательно)",
+  "fieldDescription": "Описание (необязательно)",
+  "save": "Сохранить"
 }

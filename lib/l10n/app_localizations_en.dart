@@ -142,4 +142,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get langEnglish => 'English';
+
+  @override
+  String get addNade => 'Add grenade';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get newNadeTitle => 'New grenade';
+
+  @override
+  String get editNadeTitle => 'Edit grenade';
+
+  @override
+  String get fieldTitle => 'Title';
+
+  @override
+  String get fieldType => 'Type';
+
+  @override
+  String get fieldSide => 'Side';
+
+  @override
+  String get fieldFrom => 'Throw from (text)';
+
+  @override
+  String get fieldTo => 'Lands at (text)';
+
+  @override
+  String get fieldToCoords => 'Landing coords';
+
+  @override
+  String get fieldFromCoords => 'Throw coords';
+
+  @override
+  String get pickOnMap => 'Pick on map';
+
+  @override
+  String get fieldTechnique => 'Technique (stand/run/jumpthrow...)';
+
+  @override
+  String get fieldVideoUrl => 'Video URL (optional)';
+
+  @override
+  String get fieldDescription => 'Description (optional)';
+
+  @override
+  String get save => 'Save';
 }

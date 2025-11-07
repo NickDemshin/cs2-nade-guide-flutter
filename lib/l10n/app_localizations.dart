@@ -343,6 +343,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'English'**
   String get langEnglish;
+
+  /// No description provided for @addNade.
+  ///
+  /// In en, this message translates to:
+  /// **'Add grenade'**
+  String get addNade;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @newNadeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New grenade'**
+  String get newNadeTitle;
+
+  /// No description provided for @editNadeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit grenade'**
+  String get editNadeTitle;
+
+  /// No description provided for @fieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get fieldTitle;
+
+  /// No description provided for @fieldType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get fieldType;
+
+  /// No description provided for @fieldSide.
+  ///
+  /// In en, this message translates to:
+  /// **'Side'**
+  String get fieldSide;
+
+  /// No description provided for @fieldFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Throw from (text)'**
+  String get fieldFrom;
+
+  /// No description provided for @fieldTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Lands at (text)'**
+  String get fieldTo;
+
+  /// No description provided for @fieldToCoords.
+  ///
+  /// In en, this message translates to:
+  /// **'Landing coords'**
+  String get fieldToCoords;
+
+  /// No description provided for @fieldFromCoords.
+  ///
+  /// In en, this message translates to:
+  /// **'Throw coords'**
+  String get fieldFromCoords;
+
+  /// No description provided for @pickOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick on map'**
+  String get pickOnMap;
+
+  /// No description provided for @fieldTechnique.
+  ///
+  /// In en, this message translates to:
+  /// **'Technique (stand/run/jumpthrow...)'**
+  String get fieldTechnique;
+
+  /// No description provided for @fieldVideoUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Video URL (optional)'**
+  String get fieldVideoUrl;
+
+  /// No description provided for @fieldDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get fieldDescription;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
 }
 
 class _AppLocalizationsDelegate

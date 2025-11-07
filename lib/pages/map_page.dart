@@ -202,36 +202,6 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               _saveUiPrefs();
             },
           ),
-          IconButton(
-            tooltip: _showGrid ? l.hideGrid : l.showGrid,
-            icon: Icon(_showGrid ? Icons.grid_on : Icons.grid_off),
-            onPressed: () {
-              setState(() => _showGrid = !_showGrid);
-              _saveUiPrefs();
-            },
-          ),
-          IconButton(
-            tooltip: _coordMode ? l.coordinatesOn : l.coordinatesOff,
-            icon: Icon(_coordMode ? Icons.my_location : Icons.location_searching),
-            onPressed: () => setState(() => _coordMode = !_coordMode),
-          ),
-          IconButton(
-            tooltip: l.colorBlindPalette,
-            icon: Icon(_cbFriendly ? Icons.visibility : Icons.visibility_outlined),
-            onPressed: () {
-              setState(() => _cbFriendly = !_cbFriendly);
-              _saveUiPrefs();
-            },
-          ),
-          IconButton(
-            tooltip: l.resetZoom,
-            icon: const Icon(Icons.center_focus_strong),
-            onPressed: () {
-              setState(() {
-                _transform.value = vmath.Matrix4.identity();
-              });
-            },
-          ),
         ],
       ),
       body: FutureBuilder<List<Nade>>(
@@ -278,68 +248,115 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child: InteractiveViewer(
-                    key: _viewerKey,
-                    minScale: _minScale,
-                    maxScale: _maxScale,
-                    boundaryMargin: const EdgeInsets.all(80),
-                    clipBehavior: Clip.none,
-                    transformationController: _transform,
-                    onInteractionEnd: (_) => _saveTransformPrefs(),
-                    child: MapBoard(
-                      key: _boardKey,
-                      nades: nades,
-                      selected: _selected,
-                      onSelect: (n) => setState(() {
-                        _selected = (_selected?.id == n.id) ? null : n;
-                        if (_selected != null) {
-                          // Запустить анимированный зум к выбранной точке на следующем кадре
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (!mounted || _selected == null) return;
-                            _zoomToNade(_selected!);
-                          });
-                        }
-                      }),
-                      imageAsset: widget.map.image,
-                      favoriteIds: _favorites,
-                      showGrid: _showGrid,
-                      scale: _transform.value.getMaxScaleOnAxis(),
-                      onTapRelative: _pickMode == _PickMode.none
-                          ? null
-                          : (pos) {
-                              setState(() {
-                                if (_pickMode == _PickMode.toPoint) {
-                                  _formToX = pos.dx;
-                                  _formToY = pos.dy;
-                                } else if (_pickMode == _PickMode.fromPoint) {
-                                  _formFromX = pos.dx;
-                                  _formFromY = pos.dy;
-                                }
-                                _pickMode = _PickMode.none;
+                  child: Stack(
+                    children: [
+                      InteractiveViewer(
+                        key: _viewerKey,
+                        minScale: _minScale,
+                        maxScale: _maxScale,
+                        boundaryMargin: const EdgeInsets.all(80),
+                        clipBehavior: Clip.none,
+                        transformationController: _transform,
+                        onInteractionEnd: (_) => _saveTransformPrefs(),
+                        child: MapBoard(
+                          key: _boardKey,
+                          nades: nades,
+                          selected: _selected,
+                          onSelect: (n) => setState(() {
+                            _selected = (_selected?.id == n.id) ? null : n;
+                            if (_selected != null) {
+                              // Запустить анимированный зум к выбранной точке на следующем кадре
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (!mounted || _selected == null) return;
+                                _zoomToNade(_selected!);
                               });
-                            },
-                      typeLabel: l.typeName,
-                      colorBlindFriendly: _cbFriendly,
-                      onLongPressRelative: _coordMode
-                          ? (pos) {
-                            final text = 'x: ${pos.dx.toStringAsFixed(3)}, y: ${pos.dy.toStringAsFixed(3)}';
-                            Clipboard.setData(ClipboardData(text: text));
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(l.copiedCoords(text))),
-                              );
                             }
-                          }
-                          : null,
-                      onDoubleTapLocal: (pos) {
-                        final s = _transform.value.getMaxScaleOnAxis();
-                        if (s >= 2.5) {
-                          setState(() => _transform.value = vmath.Matrix4.identity());
-                        } else {
-                          _zoomAt(pos, factor: 2.0);
-                        }
-                      },
-                    ),
+                          }),
+                          imageAsset: widget.map.image,
+                          favoriteIds: _favorites,
+                          showGrid: _showGrid,
+                          scale: _transform.value.getMaxScaleOnAxis(),
+                          onTapRelative: _pickMode == _PickMode.none
+                              ? null
+                              : (pos) {
+                                  setState(() {
+                                    if (_pickMode == _PickMode.toPoint) {
+                                      _formToX = pos.dx;
+                                      _formToY = pos.dy;
+                                    } else if (_pickMode == _PickMode.fromPoint) {
+                                      _formFromX = pos.dx;
+                                      _formFromY = pos.dy;
+                                    }
+                                    _pickMode = _PickMode.none;
+                                  });
+                                },
+                          typeLabel: l.typeName,
+                          colorBlindFriendly: _cbFriendly,
+                          onLongPressRelative: _coordMode
+                              ? (pos) {
+                                final text = 'x: ${pos.dx.toStringAsFixed(3)}, y: ${pos.dy.toStringAsFixed(3)}';
+                                Clipboard.setData(ClipboardData(text: text));
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(l.copiedCoords(text))),
+                                  );
+                                }
+                              }
+                              : null,
+                          onDoubleTapLocal: (pos) {
+                            final s = _transform.value.getMaxScaleOnAxis();
+                            if (s >= 2.5) {
+                              setState(() => _transform.value = vmath.Matrix4.identity());
+                            } else {
+                              _zoomAt(pos, factor: 2.0);
+                            }
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: _showGrid ? l.hideGrid : l.showGrid,
+                                icon: Icon(_showGrid ? Icons.grid_on : Icons.grid_off),
+                                onPressed: () {
+                                  setState(() => _showGrid = !_showGrid);
+                                  _saveUiPrefs();
+                                },
+                              ),
+                              IconButton(
+                                tooltip: _coordMode ? l.coordinatesOn : l.coordinatesOff,
+                                icon: Icon(_coordMode ? Icons.my_location : Icons.location_searching),
+                                onPressed: () => setState(() => _coordMode = !_coordMode),
+                              ),
+                              IconButton(
+                                tooltip: l.colorBlindPalette,
+                                icon: Icon(_cbFriendly ? Icons.visibility : Icons.visibility_outlined),
+                                onPressed: () {
+                                  setState(() => _cbFriendly = !_cbFriendly);
+                                  _saveUiPrefs();
+                                },
+                              ),
+                              IconButton(
+                                tooltip: l.resetZoom,
+                                icon: const Icon(Icons.center_focus_strong),
+                                onPressed: () {
+                                  setState(() {
+                                    _transform.value = vmath.Matrix4.identity();
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -376,7 +393,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddNadeSheet,
-        tooltip: 'Добавить гранату',
+        tooltip: AppLocalizations.of(context).addNade,
         child: const Icon(Icons.add),
       ),
   );
@@ -587,7 +604,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             top: 8,
           ),
           child: _NadeForm(
-            title: 'Новая граната',
+            title: AppLocalizations.of(context).newNadeTitle,
             onPickTo: () => setState(() => _pickMode = _PickMode.toPoint),
             onPickFrom: () => setState(() => _pickMode = _PickMode.fromPoint),
             getTo: () => (_formToX, _formToY),
@@ -644,7 +661,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             top: 8,
           ),
           child: _NadeForm(
-            title: 'Редактировать гранату',
+            title: AppLocalizations.of(context).editNadeTitle,
             initial: _NadeFormData(
               title: nade.title,
               type: nade.type,
@@ -925,7 +942,7 @@ class _NadeFormState extends State<_NadeForm> {
         const SizedBox(height: 12),
         TextField(
           controller: _title,
-          decoration: const InputDecoration(labelText: 'Название'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldTitle),
         ),
         const SizedBox(height: 8),
         Row(
@@ -933,7 +950,7 @@ class _NadeFormState extends State<_NadeForm> {
             Expanded(
               child: DropdownButtonFormField<NadeType>(
                 value: _type,
-                decoration: const InputDecoration(labelText: 'Тип'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldType),
                 items: const [
                   DropdownMenuItem(value: NadeType.smoke, child: Text('Smoke')),
                   DropdownMenuItem(value: NadeType.flash, child: Text('Flash')),
@@ -947,7 +964,7 @@ class _NadeFormState extends State<_NadeForm> {
             Expanded(
               child: DropdownButtonFormField<String>(
                 value: _side,
-                decoration: const InputDecoration(labelText: 'Сторона'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldSide),
                 items: const [
                   DropdownMenuItem(value: 'Both', child: Text('Both')),
                   DropdownMenuItem(value: 'T', child: Text('T')),
@@ -961,53 +978,53 @@ class _NadeFormState extends State<_NadeForm> {
         const SizedBox(height: 8),
         TextField(
           controller: _from,
-          decoration: const InputDecoration(labelText: 'Откуда бросать (текст)'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldFrom),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _to,
-          decoration: const InputDecoration(labelText: 'Куда прилетает (текст)'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldTo),
         ),
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _CoordTile(title: 'Коорд. приземления', x: to.$1, y: to.$2)),
+            Expanded(child: _CoordTile(title: AppLocalizations.of(context).fieldToCoords, x: to.$1, y: to.$2)),
             const SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: widget.onPickTo,
               icon: const Icon(Icons.my_location),
-              label: const Text('Выбрать на карте'),
+              label: Text(AppLocalizations.of(context).pickOnMap),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _CoordTile(title: 'Коорд. броска', x: from.$1, y: from.$2)),
+            Expanded(child: _CoordTile(title: AppLocalizations.of(context).fieldFromCoords, x: from.$1, y: from.$2)),
             const SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: widget.onPickFrom,
               icon: const Icon(Icons.my_location_outlined),
-              label: const Text('Выбрать на карте'),
+              label: Text(AppLocalizations.of(context).pickOnMap),
             ),
           ],
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _technique,
-          decoration: const InputDecoration(labelText: 'Техника (stand/run/jumpthrow...)'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldTechnique),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _videoUrl,
-          decoration: const InputDecoration(labelText: 'Видео URL (необязательно)'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldVideoUrl),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _description,
           minLines: 2,
           maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Описание (необязательно)'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldDescription),
         ),
         const SizedBox(height: 12),
         Align(
@@ -1015,7 +1032,7 @@ class _NadeFormState extends State<_NadeForm> {
           child: FilledButton.icon(
             onPressed: _saving ? null : _submit,
             icon: const Icon(Icons.save),
-            label: const Text('Сохранить'),
+            label: Text(AppLocalizations.of(context).save),
           ),
         ),
       ],

@@ -144,4 +144,55 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get langEnglish => 'Английский';
+
+  @override
+  String get addNade => 'Добавить гранату';
+
+  @override
+  String get edit => 'Редактировать';
+
+  @override
+  String get delete => 'Удалить';
+
+  @override
+  String get newNadeTitle => 'Новая граната';
+
+  @override
+  String get editNadeTitle => 'Редактировать гранату';
+
+  @override
+  String get fieldTitle => 'Название';
+
+  @override
+  String get fieldType => 'Тип';
+
+  @override
+  String get fieldSide => 'Сторона';
+
+  @override
+  String get fieldFrom => 'Откуда бросать (текст)';
+
+  @override
+  String get fieldTo => 'Куда прилетает (текст)';
+
+  @override
+  String get fieldToCoords => 'Коорд. приземления';
+
+  @override
+  String get fieldFromCoords => 'Коорд. броска';
+
+  @override
+  String get pickOnMap => 'Выбрать на карте';
+
+  @override
+  String get fieldTechnique => 'Техника (stand/run/jumpthrow...)';
+
+  @override
+  String get fieldVideoUrl => 'Видео URL (необязательно)';
+
+  @override
+  String get fieldDescription => 'Описание (необязательно)';
+
+  @override
+  String get save => 'Сохранить';
 }

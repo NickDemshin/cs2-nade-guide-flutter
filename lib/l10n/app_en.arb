@@ -45,5 +45,22 @@
   "noResults": "Nothing found",
   "mapsTitle": "Maps",
   "langRussian": "Russian",
-  "langEnglish": "English"
+  "langEnglish": "English",
+  "addNade": "Add grenade",
+  "edit": "Edit",
+  "delete": "Delete",
+  "newNadeTitle": "New grenade",
+  "editNadeTitle": "Edit grenade",
+  "fieldTitle": "Title",
+  "fieldType": "Type",
+  "fieldSide": "Side",
+  "fieldFrom": "Throw from (text)",
+  "fieldTo": "Lands at (text)",
+  "fieldToCoords": "Landing coords",
+  "fieldFromCoords": "Throw coords",
+  "pickOnMap": "Pick on map",
+  "fieldTechnique": "Technique (stand/run/jumpthrow...)",
+  "fieldVideoUrl": "Video URL (optional)",
+  "fieldDescription": "Description (optional)",
+  "save": "Save"
 }
