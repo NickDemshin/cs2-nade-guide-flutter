@@ -210,7 +210,7 @@ class _MapBoardState extends State<MapBoard> {
                               color: _typeColor(c.type),
                               icon: _typeIcon(c.type),
                               scale: widget.scale,
-                              onTap: () => _openClusterChooser(context, c),
+                              onTap: () => _openClusterPopover(context, c),
                             ),
                           ),
                         ),
@@ -271,13 +271,7 @@ class _MapBoardState extends State<MapBoard> {
     return result;
   }
 
-  void _openClusterChooser(BuildContext context, _Cluster c) {
-    // Если по какой-то причине единичный — сразу выбрать
-    if (c.items.length == 1) {
-      widget.onSelect(c.items.first);
-      return;
-    }
-    showModalBottomSheet(
+  void _openClusterPopover(BuildContext context, _Cluster c) async {\n    if (c.items.length == 1) {\n      widget.onSelect(c.items.first);\n      return;\n    }\n    final box = _boxKey.currentContext?.findRenderObject() as RenderBox?;\n    if (box == null) return;\n    final global = box.localToGlobal(c.center);\n    final selected = await showMenu<Nade>(\n      context: context,\n      position: RelativeRect.fromLTRB(global.dx, global.dy, global.dx, global.dy),\n      items: [\n        for (final n in c.items)\n          PopupMenuItem<Nade>(\n            value: n,\n            child: Row(\n              children: [\n                Icon(_typeIcon(c.type), color: _typeColor(c.type)),\n                const SizedBox(width: 8),\n                Expanded(child: Text(n.title, overflow: TextOverflow.ellipsis)),\n              ],\n            ),\n          )\n      ],\n    );\n    if (selected != null) {\n      widget.onSelect(selected);\n    }\n  }\n    showModalBottomSheet(
       context: context,
       showDragHandle: true,
       builder: (ctx) {
