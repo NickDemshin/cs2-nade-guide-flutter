@@ -10,6 +10,7 @@ class MapBoard extends StatefulWidget {
   final String? imageAsset; // фоновое изображение карты
   final Set<String>? favoriteIds; // набор избранных ID для визуальной пометки
   final ValueChanged<Offset>? onLongPressRelative; // нормированные координаты 0..1
+  final ValueChanged<Offset>? onTapRelative; // нормированные координаты 0..1 (для выбора точки)
   final ValueChanged<Offset>? onDoubleTapLocal; // локальная позиция double-tap
   final double scale; // текущий масштаб из InteractiveViewer
   final String Function(NadeType)? typeLabel; // локализованные подписи типов
@@ -24,6 +25,7 @@ class MapBoard extends StatefulWidget {
     this.imageAsset,
     this.favoriteIds,
     this.onLongPressRelative,
+    this.onTapRelative,
     this.onDoubleTapLocal,
     this.scale = 1.0,
     this.typeLabel,
@@ -121,6 +123,14 @@ class _MapBoardState extends State<MapBoard> {
             width: canvasW,
             height: canvasH,
             child: GestureDetector(
+              onTapDown: (details) {
+                if (widget.onTapRelative != null) {
+                  final local = details.localPosition;
+                  final nx = (local.dx / canvasW).clamp(0.0, 1.0);
+                  final ny = (local.dy / canvasH).clamp(0.0, 1.0);
+                  widget.onTapRelative!(Offset(nx, ny));
+                }
+              },
               onLongPressStart: (details) {
                 if (widget.onLongPressRelative == null) return;
                 final local = details.localPosition;

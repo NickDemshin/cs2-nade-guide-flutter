@@ -58,6 +58,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   final Set<String> _favorites = <String>{};
   bool _coordMode = false;
   bool _cbFriendly = false;
+  _PickMode _pickMode = _PickMode.none;
+  double? _formToX, _formToY, _formFromX, _formFromY;
 
   @override
   void initState() {
@@ -302,6 +304,20 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                       favoriteIds: _favorites,
                       showGrid: _showGrid,
                       scale: _transform.value.getMaxScaleOnAxis(),
+                      onTapRelative: _pickMode == _PickMode.none
+                          ? null
+                          : (pos) {
+                              setState(() {
+                                if (_pickMode == _PickMode.toPoint) {
+                                  _formToX = pos.dx;
+                                  _formToY = pos.dy;
+                                } else if (_pickMode == _PickMode.fromPoint) {
+                                  _formFromX = pos.dx;
+                                  _formFromY = pos.dy;
+                                }
+                                _pickMode = _PickMode.none;
+                              });
+                            },
                       typeLabel: l.typeName,
                       colorBlindFriendly: _cbFriendly,
                       onLongPressRelative: _coordMode
@@ -339,6 +355,12 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                       ),
                     );
                   },
+                  onEdit: _selected!.id.startsWith('user_')
+                      ? () => _openEditNadeSheet(_selected!)
+                      : null,
+                  onDelete: _selected!.id.startsWith('user_')
+                      ? () => _deleteUserNade(_selected!)
+                      : null,
                 ),
               if (_selected == null)
                 Padding(
@@ -352,6 +374,11 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           );
       },
     ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openAddNadeSheet,
+        tooltip: 'Добавить гранату',
+        child: const Icon(Icons.add),
+      ),
   );
   }
 
@@ -541,6 +568,139 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     });
     _saveFavorites();
   }
+
+  void _openAddNadeSheet() {
+    _formToX = null;
+    _formToY = null;
+    _formFromX = null;
+    _formFromY = null;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            left: 16,
+            right: 16,
+            top: 8,
+          ),
+          child: _NadeForm(
+            title: 'Новая граната',
+            onPickTo: () => setState(() => _pickMode = _PickMode.toPoint),
+            onPickFrom: () => setState(() => _pickMode = _PickMode.fromPoint),
+            getTo: () => (_formToX, _formToY),
+            getFrom: () => (_formFromX, _formFromY),
+            onSave: (data) async {
+              final id = 'user_${widget.map.id}_${DateTime.now().millisecondsSinceEpoch}';
+              final n = Nade(
+                id: id,
+                mapId: widget.map.id,
+                title: data.title,
+                type: data.type,
+                side: data.side,
+                from: data.from,
+                to: data.to,
+                technique: data.technique,
+                toX: _formToX ?? 0.5,
+                toY: _formToY ?? 0.5,
+                fromX: _formFromX ?? 0.5,
+                fromY: _formFromY ?? 0.5,
+                videoUrl: data.videoUrl,
+                description: data.description,
+                descriptionEn: null,
+                descriptionRu: null,
+              );
+              await _repo.addUserNade(widget.map.id, n);
+              if (!mounted) return;
+              setState(() {
+                _futureNades = _repo.getNadesByMap(widget.map.id);
+              });
+              if (!context.mounted) return;
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _openEditNadeSheet(Nade nade) {
+    _formToX = nade.toX;
+    _formToY = nade.toY;
+    _formFromX = nade.fromX;
+    _formFromY = nade.fromY;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            left: 16,
+            right: 16,
+            top: 8,
+          ),
+          child: _NadeForm(
+            title: 'Редактировать гранату',
+            initial: _NadeFormData(
+              title: nade.title,
+              type: nade.type,
+              side: nade.side,
+              from: nade.from,
+              to: nade.to,
+              technique: nade.technique,
+              videoUrl: nade.videoUrl ?? '',
+              description: nade.description ?? '',
+            ),
+            onPickTo: () => setState(() => _pickMode = _PickMode.toPoint),
+            onPickFrom: () => setState(() => _pickMode = _PickMode.fromPoint),
+            getTo: () => (_formToX, _formToY),
+            getFrom: () => (_formFromX, _formFromY),
+            onSave: (data) async {
+              final updated = Nade(
+                id: nade.id,
+                mapId: widget.map.id,
+                title: data.title,
+                type: data.type,
+                side: data.side,
+                from: data.from,
+                to: data.to,
+                technique: data.technique,
+                toX: _formToX ?? nade.toX,
+                toY: _formToY ?? nade.toY,
+                fromX: _formFromX ?? nade.fromX,
+                fromY: _formFromY ?? nade.fromY,
+                videoUrl: data.videoUrl,
+                description: data.description,
+                descriptionEn: nade.descriptionEn,
+                descriptionRu: nade.descriptionRu,
+              );
+              await _repo.updateUserNade(widget.map.id, updated);
+              if (!mounted) return;
+              setState(() {
+                _selected = updated;
+                _futureNades = _repo.getNadesByMap(widget.map.id);
+              });
+              if (!context.mounted) return;
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteUserNade(Nade nade) async {
+    await _repo.deleteUserNade(widget.map.id, nade.id);
+    if (!mounted) return;
+    setState(() {
+      _selected = null;
+      _futureNades = _repo.getNadesByMap(widget.map.id);
+    });
+  }
 }
 
 // Removed legacy inline filter widgets (_FilterBar, _SideFilterBar)
@@ -552,11 +712,15 @@ class _SelectedInfo extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
   final VoidCallback onOpenDetails;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
   const _SelectedInfo({
     required this.nade,
     required this.isFavorite,
     required this.onToggleFavorite,
     required this.onOpenDetails,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -614,6 +778,19 @@ class _SelectedInfo extends StatelessWidget {
                       label: Text(l.openVideo),
                       onPressed: () => _openVideo(context, nade.videoUrl!),
                     ),
+                  const Spacer(),
+                  if (nade.id.startsWith('user_') && onEdit != null)
+                    TextButton.icon(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Редактировать'),
+                    ),
+                  if (nade.id.startsWith('user_') && onDelete != null)
+                    TextButton.icon(
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Удалить'),
+                    ),
                 ],
               ),
             ],
@@ -653,4 +830,246 @@ String? _localizedDescription(BuildContext context, Nade n) {
     if (n.descriptionRu != null && n.descriptionRu!.isNotEmpty) return n.descriptionRu;
   }
   return n.description;
+}
+
+enum _PickMode { none, toPoint, fromPoint }
+
+class _NadeFormData {
+  String title;
+  NadeType type;
+  String side; // 'T' | 'CT' | 'Both'
+  String from;
+  String to;
+  String technique;
+  String videoUrl;
+  String description;
+  _NadeFormData({
+    required this.title,
+    required this.type,
+    required this.side,
+    required this.from,
+    required this.to,
+    required this.technique,
+    required this.videoUrl,
+    required this.description,
+  });
+}
+
+class _NadeForm extends StatefulWidget {
+  final String title;
+  final _NadeFormData? initial;
+  final VoidCallback onPickTo;
+  final VoidCallback onPickFrom;
+  final (double?, double?) Function() getTo;
+  final (double?, double?) Function() getFrom;
+  final Future<void> Function(_NadeFormData) onSave;
+  const _NadeForm({
+    required this.title,
+    this.initial,
+    required this.onPickTo,
+    required this.onPickFrom,
+    required this.getTo,
+    required this.getFrom,
+    required this.onSave,
+  });
+
+  @override
+  State<_NadeForm> createState() => _NadeFormState();
+}
+
+class _NadeFormState extends State<_NadeForm> {
+  late final TextEditingController _title;
+  late NadeType _type;
+  String _side = 'Both';
+  late final TextEditingController _from;
+  late final TextEditingController _to;
+  late final TextEditingController _technique;
+  late final TextEditingController _videoUrl;
+  late final TextEditingController _description;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final i = widget.initial;
+    _title = TextEditingController(text: i?.title ?? '');
+    _type = i?.type ?? NadeType.smoke;
+    _side = i?.side ?? 'Both';
+    _from = TextEditingController(text: i?.from ?? '');
+    _to = TextEditingController(text: i?.to ?? '');
+    _technique = TextEditingController(text: i?.technique ?? 'stand');
+    _videoUrl = TextEditingController(text: i?.videoUrl ?? '');
+    _description = TextEditingController(text: i?.description ?? '');
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _from.dispose();
+    _to.dispose();
+    _technique.dispose();
+    _videoUrl.dispose();
+    _description.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final to = widget.getTo();
+    final from = widget.getFrom();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _title,
+          decoration: const InputDecoration(labelText: 'Название'),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<NadeType>(
+                value: _type,
+                decoration: const InputDecoration(labelText: 'Тип'),
+                items: const [
+                  DropdownMenuItem(value: NadeType.smoke, child: Text('Smoke')),
+                  DropdownMenuItem(value: NadeType.flash, child: Text('Flash')),
+                  DropdownMenuItem(value: NadeType.molotov, child: Text('Molotov')),
+                  DropdownMenuItem(value: NadeType.he, child: Text('HE')),
+                ],
+                onChanged: (v) => setState(() => _type = v ?? _type),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _side,
+                decoration: const InputDecoration(labelText: 'Сторона'),
+                items: const [
+                  DropdownMenuItem(value: 'Both', child: Text('Both')),
+                  DropdownMenuItem(value: 'T', child: Text('T')),
+                  DropdownMenuItem(value: 'CT', child: Text('CT')),
+                ],
+                onChanged: (v) => setState(() => _side = v ?? _side),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _from,
+          decoration: const InputDecoration(labelText: 'Откуда бросать (текст)'),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _to,
+          decoration: const InputDecoration(labelText: 'Куда прилетает (текст)'),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _CoordTile(title: 'Коорд. приземления', x: to.$1, y: to.$2)),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              onPressed: widget.onPickTo,
+              icon: const Icon(Icons.my_location),
+              label: const Text('Выбрать на карте'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _CoordTile(title: 'Коорд. броска', x: from.$1, y: from.$2)),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              onPressed: widget.onPickFrom,
+              icon: const Icon(Icons.my_location_outlined),
+              label: const Text('Выбрать на карте'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _technique,
+          decoration: const InputDecoration(labelText: 'Техника (stand/run/jumpthrow...)'),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _videoUrl,
+          decoration: const InputDecoration(labelText: 'Видео URL (необязательно)'),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _description,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'Описание (необязательно)'),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton.icon(
+            onPressed: _saving ? null : _submit,
+            icon: const Icon(Icons.save),
+            label: const Text('Сохранить'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _submit() async {
+    if (_title.text.trim().isEmpty) {
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final data = _NadeFormData(
+        title: _title.text.trim(),
+        type: _type,
+        side: _side,
+        from: _from.text.trim(),
+        to: _to.text.trim(),
+        technique: _technique.text.trim(),
+        videoUrl: _videoUrl.text.trim(),
+        description: _description.text.trim(),
+      );
+      await widget.onSave(data);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+}
+
+class _CoordTile extends StatelessWidget {
+  final String title;
+  final double? x;
+  final double? y;
+  const _CoordTile({required this.title, required this.x, required this.y});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = (x == null || y == null)
+        ? 'не выбрано'
+        : 'x: ${x!.toStringAsFixed(3)}, y: ${y!.toStringAsFixed(3)}';
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.labelMedium),
+          const SizedBox(height: 6),
+          Text(text),
+        ],
+      ),
+    );
+  }
 }

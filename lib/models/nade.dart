@@ -89,4 +89,29 @@ class Nade {
       descriptionRu: json['description_ru'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'type': switch (type) {
+          NadeType.smoke => 'smoke',
+          NadeType.flash => 'flash',
+          NadeType.molotov => 'molotov',
+          NadeType.he => 'he',
+        },
+        'side': side,
+        'from': from,
+        'to': to,
+        'technique': technique,
+        'toX': toX,
+        'toY': toY,
+        'fromX': fromX,
+        'fromY': fromY,
+        if (videoUrl != null && videoUrl!.isNotEmpty) 'videoUrl': videoUrl,
+        if (description != null && description!.isNotEmpty) 'description': description,
+        if (descriptionEn != null && descriptionEn!.isNotEmpty) 'description_en': descriptionEn,
+        if (descriptionRu != null && descriptionRu!.isNotEmpty) 'description_ru': descriptionRu,
+      };
+
+  bool get isUser => id.startsWith('user_');
 }
