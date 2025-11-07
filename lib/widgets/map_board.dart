@@ -113,6 +113,9 @@ class _MapBoardState extends State<MapBoard> {
         final canvasW = w;
         final canvasH = h;
 
+        // Построить кластеры по близости (в пикселях) и типу гранаты
+        final clusters = _buildClusters(canvasW, canvasH, widget.nades);
+
         return Center(
           child: SizedBox(
             width: canvasW,
@@ -155,27 +158,45 @@ class _MapBoardState extends State<MapBoard> {
                       ),
                     ),
 
-                  // Все точки приземления (to)
-                  ...widget.nades.map((n) {
-                    final x = n.toX * canvasW;
-                    final y = n.toY * canvasH;
-                    final isSel = n.id == widget.selected?.id;
-                    final isFav = widget.favoriteIds?.contains(n.id) ?? false;
-                    return Positioned(
-                      left: x - 10,
-                      top: y - 10,
-                      child: Tooltip(
-                        message: '${(widget.typeLabel?.call(n.type) ?? nadeTypeLabel(n.type))}: ${n.title}',
-                        child: _Marker(
-                          color: _typeColor(n.type),
-                          label: (widget.typeLabel?.call(n.type) ?? nadeTypeLabel(n.type))[0],
-                          selected: isSel,
-                          scale: widget.scale,
-                          favorite: isFav,
-                          onTap: () => widget.onSelect(n),
+                  // Кластеры точек приземления (to)
+                  ...clusters.map((c) {
+                    final x = c.center.dx;
+                    final y = c.center.dy;
+                    if (c.items.length == 1) {
+                      final n = c.items.first;
+                      final isSel = n.id == widget.selected?.id;
+                      final isFav = widget.favoriteIds?.contains(n.id) ?? false;
+                      return Positioned(
+                        left: x - 10,
+                        top: y - 10,
+                        child: Tooltip(
+                          message: '${(widget.typeLabel?.call(n.type) ?? nadeTypeLabel(n.type))}: ${n.title}',
+                          child: _Marker(
+                            color: _typeColor(n.type),
+                            icon: _typeIcon(n.type),
+                            selected: isSel,
+                            scale: widget.scale,
+                            favorite: isFav,
+                            onTap: () => widget.onSelect(n),
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    } else {
+                      // Кластер из нескольких гранат одного типа
+                      return Positioned(
+                        left: x - 12,
+                        top: y - 12,
+                        child: Tooltip(
+                          message: '${(widget.typeLabel?.call(c.type) ?? nadeTypeLabel(c.type))} × ${c.items.length}',
+                          child: _ClusterMarker(
+                            color: _typeColor(c.type),
+                            icon: _typeIcon(c.type),
+                            scale: widget.scale,
+                            onTap: () => _openClusterChooser(context, c),
+                          ),
+                        ),
+                      );
+                    }
                   }),
 
                   // Точка старта броска для выбранной
@@ -194,6 +215,73 @@ class _MapBoardState extends State<MapBoard> {
                 ],
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Кластеризуем точки по радиусу в пикселях и типу гранаты
+  List<_Cluster> _buildClusters(double canvasW, double canvasH, List<Nade> nades) {
+    const double radiusPx = 24.0; // радиус объединения по расстоянию в пикселях
+    final List<_Cluster> result = [];
+    for (final n in nades) {
+      final p = Offset(n.toX * canvasW, n.toY * canvasH);
+      _Cluster? found;
+      double bestDist2 = double.infinity;
+      for (final c in result) {
+        if (c.type != n.type) continue; // объединяем только одинаковые типы
+        final d2 = (c.center - p).distanceSquared;
+        if (d2 <= radiusPx * radiusPx && d2 < bestDist2) {
+          found = c;
+          bestDist2 = d2;
+        }
+      }
+      if (found == null) {
+        result.add(_Cluster(type: n.type, center: p, items: [n]));
+      } else {
+        // обновим центр как среднее (простое инкрементальное)
+        final m = found.items.length.toDouble();
+        found.center = Offset(
+          (found.center.dx * m + p.dx) / (m + 1),
+          (found.center.dy * m + p.dy) / (m + 1),
+        );
+        found.items.add(n);
+      }
+    }
+    return result;
+  }
+
+  void _openClusterChooser(BuildContext context, _Cluster c) {
+    // Если по какой-то причине единичный — сразу выбрать
+    if (c.items.length == 1) {
+      widget.onSelect(c.items.first);
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: c.items.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final n = c.items[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: _typeColor(c.type),
+                  child: Icon(_typeIcon(c.type), color: Colors.white),
+                ),
+                title: Text(n.title),
+                subtitle: Text('${n.from} → ${n.to}'),
+                onTap: () {
+                  Navigator.pop(context);
+                  widget.onSelect(n);
+                },
+              );
+            },
           ),
         );
       },
@@ -224,11 +312,74 @@ class _MapBoardState extends State<MapBoard> {
         return Colors.green;
     }
   }
+
+  IconData _typeIcon(NadeType t) {
+    switch (t) {
+      case NadeType.smoke:
+        return Icons.cloud;
+      case NadeType.flash:
+        return Icons.flash_on;
+      case NadeType.molotov:
+        return Icons.local_fire_department;
+      case NadeType.he:
+        return Icons.bubble_chart; // условный значок для HE
+    }
+  }
+}
+
+class _Cluster {
+  final NadeType type;
+  final List<Nade> items;
+  Offset center;
+  _Cluster({required this.type, required this.center, required this.items});
+}
+
+class _ClusterMarker extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final VoidCallback onTap;
+  final double scale;
+
+  const _ClusterMarker({
+    required this.color,
+    required this.icon,
+    required this.onTap,
+    this.scale = 1.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final inv = scale <= 0 ? 1.0 : (1.0 / scale);
+    final size = (22.0 * inv).clamp(12.0, 28.0);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.9),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 6,
+              spreadRadius: 1,
+            ),
+          ],
+          border: Border.all(color: Colors.white, width: 2.0),
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, color: Colors.white, size: (size * 0.58).clamp(10.0, 16.0)),
+      ),
+    );
+  }
 }
 
 class _Marker extends StatelessWidget {
   final Color color;
-  final String label;
+  final String? label;
+  final IconData? icon;
   final VoidCallback onTap;
   final bool selected;
   final bool favorite;
@@ -236,7 +387,8 @@ class _Marker extends StatelessWidget {
 
   const _Marker({
     required this.color,
-    required this.label,
+    this.label,
+    this.icon,
     required this.onTap,
     this.selected = false,
     this.favorite = false,
@@ -273,14 +425,16 @@ class _Marker extends StatelessWidget {
               border: Border.all(color: borderColor, width: borderWidth),
             ),
             alignment: Alignment.center,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: icon != null
+                ? Icon(icon, color: Colors.white, size: (size * 0.58).clamp(10.0, 16.0))
+                : Text(
+                    label ?? '',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
           if (favorite)
             const Positioned(

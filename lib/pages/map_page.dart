@@ -9,6 +9,7 @@ import '../models/cs_map.dart';
 import '../models/nade.dart';
 import '../widgets/map_board.dart';
 import '../l10n/app_localizations.dart';
+import '../l10n/nade_type_l10n.dart';
 import 'nade_detail_page.dart';
 
 class _Matrix4Tween extends Tween<vmath.Matrix4> {
@@ -157,9 +158,9 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                     onPressed: _openTypeFilterSheet,
                     label: Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(_filterType == null
-                          ? l.filterAll
-                          : _typeLabel(context, _filterType!)),
+                      child: Text(
+                        _filterType == null ? l.filterAll : l.typeName(_filterType!),
+                      ),
                     ),
                   ),
                 ),
@@ -301,18 +302,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                       favoriteIds: _favorites,
                       showGrid: _showGrid,
                       scale: _transform.value.getMaxScaleOnAxis(),
-                      typeLabel: (t) {
-                        switch (t) {
-                          case NadeType.smoke:
-                            return l.typeSmoke;
-                          case NadeType.flash:
-                            return l.typeFlash;
-                          case NadeType.molotov:
-                            return l.typeMolotov;
-                          case NadeType.he:
-                            return l.typeHE;
-                        }
-                      },
+                      typeLabel: l.typeName,
                       colorBlindFriendly: _cbFriendly,
                       onLongPressRelative: _coordMode
                           ? (pos) {
@@ -597,7 +587,7 @@ class _SelectedInfo extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 children: [
-                  Chip(label: Text(_typeLabel(context, nade.type))),
+                  Chip(label: Text(l.typeName(nade.type))),
                   Chip(label: Text(l.sideLabel(nade.side))),
                   Chip(label: Text(l.techniqueLabel(nade.technique))),
                 ],
@@ -653,19 +643,7 @@ Future<void> _openVideo(BuildContext context, String url) async {
   }
 }
 
-String _typeLabel(BuildContext context, NadeType t) {
-    final l = AppLocalizations.of(context);
-  switch (t) {
-    case NadeType.smoke:
-      return l.typeSmoke;
-    case NadeType.flash:
-      return l.typeFlash;
-    case NadeType.molotov:
-      return l.typeMolotov;
-    case NadeType.he:
-      return l.typeHE;
-  }
-}
+// Removed duplicate _typeLabel; use AppLocalizations.typeName extension instead.
 
 String? _localizedDescription(BuildContext context, Nade n) {
   final locale = Localizations.localeOf(context);

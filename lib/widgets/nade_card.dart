@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
+import '../l10n/nade_type_l10n.dart';
 
 import '../models/nade.dart';
 
@@ -27,28 +28,15 @@ class NadeCard extends StatelessWidget {
       onTap: onTap,
       leading: CircleAvatar(
         backgroundColor: _typeColor(context, nade.type),
-        child: Text(_typeLabel(context, nade.type)[0]),
+        child: Text(AppLocalizations.of(context).typeName(nade.type)[0]),
       ),
       title: Text(nade.title),
       subtitle: Text('От: ${nade.from} → К: ${nade.to}'),
       trailing: Chip(
-        label: Text(_typeLabel(context, nade.type)),
+        label: Text(AppLocalizations.of(context).typeName(nade.type)),
         visualDensity: VisualDensity.compact,
       ),
     );
   }
 }
-
-String _typeLabel(BuildContext context, NadeType t) {
-  final l = AppLocalizations.of(context);
-  switch (t) {
-    case NadeType.smoke:
-      return l.typeSmoke;
-    case NadeType.flash:
-      return l.typeFlash;
-    case NadeType.molotov:
-      return l.typeMolotov;
-    case NadeType.he:
-      return l.typeHE;
-  }
-}
+// Removed duplicate _typeLabel; use AppLocalizations.typeName extension instead.
