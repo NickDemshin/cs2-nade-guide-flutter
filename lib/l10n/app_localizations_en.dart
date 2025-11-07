@@ -136,4 +136,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapsTitle => 'Maps';
+
+  @override
+  String get langRussian => 'Russian';
+
+  @override
+  String get langEnglish => 'English';
 }

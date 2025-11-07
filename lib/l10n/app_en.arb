@@ -43,5 +43,7 @@
   "toggleGrid": "Grid view",
   "toggleList": "List view",
   "noResults": "Nothing found",
-  "mapsTitle": "Maps"
+  "mapsTitle": "Maps",
+  "langRussian": "Russian",
+  "langEnglish": "English"
 }

@@ -60,15 +60,15 @@ class _HomePageState extends State<HomePage> {
                 LocaleController.setRu();
               } else if (code == 'en') {
                 LocaleController.setEn();
-              } else {
-                LocaleController.setSystem();
               }
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'system', child: Text('System')),
-              PopupMenuItem(value: 'ru', child: Text('Русский')),
-              PopupMenuItem(value: 'en', child: Text('English')),
-            ],
+            itemBuilder: (context) {
+              final l = AppLocalizations.of(context);
+              return [
+                PopupMenuItem(value: 'ru', child: Text(l.langRussian)),
+                PopupMenuItem(value: 'en', child: Text(l.langEnglish)),
+              ];
+            },
           ),
           IconButton(
             tooltip: l.refresh,

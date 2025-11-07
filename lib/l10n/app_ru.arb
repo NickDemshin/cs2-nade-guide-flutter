@@ -43,5 +43,7 @@
   "toggleGrid": "Сетка",
   "toggleList": "Список",
   "noResults": "Ничего не найдено",
-  "mapsTitle": "Карты"
+  "mapsTitle": "Карты",
+  "langRussian": "Русский",
+  "langEnglish": "Английский"
 }

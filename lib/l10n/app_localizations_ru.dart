@@ -138,4 +138,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mapsTitle => 'Карты';
+
+  @override
+  String get langRussian => 'Русский';
+
+  @override
+  String get langEnglish => 'Английский';
 }
