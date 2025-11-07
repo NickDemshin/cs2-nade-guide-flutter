@@ -276,6 +276,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                           favoriteIds: _favorites,
                           showGrid: _showGrid,
                           scale: _transform.value.getMaxScaleOnAxis(),
+                          tempTo: (_formToX != null && _formToY != null) ? Offset(_formToX!, _formToY!) : null,
+                          tempFrom: (_formFromX != null && _formFromY != null) ? Offset(_formFromX!, _formFromY!) : null,
                           onTapRelative: _pickMode == _PickMode.none
                               ? null
                               : (pos) {
@@ -605,12 +607,13 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           ),
           child: _NadeForm(
             title: AppLocalizations.of(context).newNadeTitle,
-            onPickTo: () => setState(() => _pickMode = _PickMode.toPoint),
-            onPickFrom: () => setState(() => _pickMode = _PickMode.fromPoint),
+            onPickTo: () => _openCoordPickerReload(_PickMode.toPoint),
+            onPickFrom: () => _openCoordPickerReload(_PickMode.fromPoint),
             getTo: () => (_formToX, _formToY),
             getFrom: () => (_formFromX, _formFromY),
             onSave: (data) async {
               final id = 'user_${widget.map.id}_${DateTime.now().millisecondsSinceEpoch}';
+
               final n = Nade(
                 id: id,
                 mapId: widget.map.id,
@@ -672,8 +675,8 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
               videoUrl: nade.videoUrl ?? '',
               description: nade.description ?? '',
             ),
-            onPickTo: () => setState(() => _pickMode = _PickMode.toPoint),
-            onPickFrom: () => setState(() => _pickMode = _PickMode.fromPoint),
+            onPickTo: () => _openCoordPickerReload(_PickMode.toPoint),
+            onPickFrom: () => _openCoordPickerReload(_PickMode.fromPoint),
             getTo: () => (_formToX, _formToY),
             getFrom: () => (_formFromX, _formFromY),
             onSave: (data) async {
@@ -710,13 +713,49 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _deleteUserNade(Nade nade) async {
-    await _repo.deleteUserNade(widget.map.id, nade.id);
+    Future<void> _openCoordPickerWithNades(List<Nade> nades, _PickMode mode) async {
+    final pos = await Navigator.of(context).push<Offset>(
+      MaterialPageRoute(builder: (_) => _CoordPicker(map: widget.map, nades: nades)),
+    );
+    if (pos != null && mounted) {
+      setState(() {
+        if (mode == _PickMode.toPoint) {
+          _formToX = pos.dx;
+          _formToY = pos.dy;
+        } else {
+          _formFromX = pos.dx;
+          _formFromY = pos.dy;
+        }
+      });
+    }
+  }
+
+  Future<void> _openCoordPickerReload(_PickMode mode) async {
+    final list = await _repo.getNadesByMap(widget.map.id);
     if (!mounted) return;
-    setState(() {
-      _selected = null;
-      _futureNades = _repo.getNadesByMap(widget.map.id);
-    });
+    await _openCoordPickerWithNades(list, mode);
+  }
+
+Future<void> _deleteUserNade(Nade nade) async {
+    try {
+      await _repo.deleteUserNade(widget.map.id, nade.id);
+      if (!mounted) return;
+      setState(() {
+        _selected = null;
+        _futureNades = _repo.getNadesByMap(widget.map.id);
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Удалено: ${nade.title}')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка удаления: $e')),
+        );
+      }
+    }
   }
 }
 
@@ -1090,3 +1129,64 @@ class _CoordTile extends StatelessWidget {
     );
   }
 }
+class _CoordPicker extends StatefulWidget {
+  final CsMap map;
+  final List<Nade> nades;
+  const _CoordPicker({required this.map, required this.nades});
+  @override
+  State<_CoordPicker> createState() => _CoordPickerState();
+}
+
+class _CoordPickerState extends State<_CoordPicker> {
+  final _transform = TransformationController();
+  @override
+  void dispose() { _transform.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Scaffold(
+      appBar: AppBar(title: Text(l.pickOnMap)),
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: InteractiveViewer(
+          transformationController: _transform,
+          minScale: 1.0,
+          maxScale: 5.0,
+          boundaryMargin: const EdgeInsets.all(80),
+          clipBehavior: Clip.none,
+          child: MapBoard(
+            nades: widget.nades,
+            onSelect: (_) {},
+            selected: null,
+            imageAsset: widget.map.image,
+            showGrid: true,
+            favoriteIds: const {},
+            scale: _transform.value.getMaxScaleOnAxis(),
+            typeLabel: (t) => nadeTypeLabel(t),
+            colorBlindFriendly: false,
+            onTapRelative: (pos) => Navigator.of(context).pop(pos),
+            onDoubleTapLocal: (pos) {
+              final s = _transform.value.getMaxScaleOnAxis();
+              if (s >= 2.5) {
+                setState(() => _transform.value = vmath.Matrix4.identity());
+              } else {
+                // zoom in around tap
+                final m0 = _transform.value;
+                final s0 = m0.getMaxScaleOnAxis();
+                final s1 = (s0 * 2.0).clamp(1.0, 5.0).toDouble();
+                final tx0 = m0.storage[12];
+                final ty0 = m0.storage[13];
+                final t1x = tx0 + pos.dx * (s0 - s1);
+                final t1y = ty0 + pos.dy * (s0 - s1);
+                setState(() {
+                  _transform.value = vmath.Matrix4.identity()..translate(t1x, t1y)..scale(s1);
+                });
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+

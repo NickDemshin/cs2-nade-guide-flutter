@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:math' as math;
 
 import '../models/nade.dart';
 
@@ -16,6 +17,9 @@ class MapBoard extends StatefulWidget {
   final double scale; // текущий масштаб из InteractiveViewer
   final String Function(NadeType)? typeLabel; // локализованные подписи типов
   final bool colorBlindFriendly; // альтернативная палитра цветов
+  final Offset? tempTo; // временная точка приземления (0..1)
+  final Offset? tempFrom; // временная точка броска (0..1)
+  final bool showLegend;
 
   const MapBoard({
     super.key,
@@ -31,6 +35,9 @@ class MapBoard extends StatefulWidget {
     this.scale = 1.0,
     this.typeLabel,
     this.colorBlindFriendly = false,
+    this.tempTo,
+    this.tempFrom,
+    this.showLegend = true,
   });
 
   @override
@@ -148,17 +155,19 @@ class _MapBoardState extends State<MapBoard> {
                 fit: StackFit.expand,
                 children: [
                   // Фон: изображение карты если задано, иначе тёмный фон
-                  Positioned.fill(
-                    child: hasImage
-                        ? Image.asset(
-                            widget.imageAsset!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stack) => Container(color: const Color(0xFF1E1E1E)),
-                          )
-                        : Container(color: const Color(0xFF1E1E1E)),
+                  RepaintBoundary(
+                    child: Positioned.fill(
+                      child: hasImage
+                          ? Image.asset(
+                              widget.imageAsset!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stack) => Container(color: const Color(0xFF1E1E1E)),
+                            )
+                          : Container(color: const Color(0xFF1E1E1E)),
+                    ),
                   ),
                   // Лёгкая сетка поверх фона (для ориентира)
-                  if (widget.showGrid) CustomPaint(painter: _GridPainter()),
+                  if (widget.showGrid) RepaintBoundary(child: CustomPaint(painter: _GridPainter())),
 
                   // Линия от from -> to для выбранной гранаты
                   if (widget.selected != null)
@@ -185,13 +194,14 @@ class _MapBoardState extends State<MapBoard> {
                           child: Semantics(
                             label: '${(widget.typeLabel?.call(n.type) ?? nadeTypeLabel(n.type))}: ${n.title}',
                             button: true,
-                            child: _Marker(
-                              color: _typeColor(n.type),
-                              icon: _typeIcon(n.type),
-                              selected: isSel,
-                              scale: widget.scale,
-                              favorite: isFav,
-                              onTap: () => widget.onSelect(n),
+                          child: _Marker(
+                            color: _typeColor(n.type),
+                            shape: _typeShape(n.type),
+                            icon: _typeIcon(n.type),
+                            selected: isSel,
+                            scale: widget.scale,
+                            favorite: isFav,
+                            onTap: () => widget.onSelect(n),
                             ),
                           ),
                         ),
@@ -204,7 +214,7 @@ class _MapBoardState extends State<MapBoard> {
                         child: Tooltip(
                           message: '${(widget.typeLabel?.call(c.type) ?? nadeTypeLabel(c.type))} × ${c.items.length}',
                           child: Semantics(
-                            label: '${(widget.typeLabel?.call(c.type) ?? nadeTypeLabel(c.type))}',
+                            label: (widget.typeLabel?.call(c.type) ?? nadeTypeLabel(c.type)),
                             button: true,
                             child: _ClusterMarker(
                               color: _typeColor(c.type),
@@ -231,6 +241,56 @@ class _MapBoardState extends State<MapBoard> {
                         onTap: () {},
                       ),
                     ),
+
+                  // Временные точки предпросмотра
+                  if (widget.tempTo != null)
+                    Positioned(
+                      left: widget.tempTo!.dx * canvasW - 8,
+                      top: widget.tempTo!.dy * canvasH - 8,
+                      child: _Marker(
+                        color: Colors.cyan,
+                        shape: _MarkerShape.circle,
+                        icon: Icons.my_location,
+                        scale: widget.scale,
+                        onTap: () {},
+                      ),
+                    ),
+                  if (widget.tempFrom != null)
+                    Positioned(
+                      left: widget.tempFrom!.dx * canvasW - 8,
+                      top: widget.tempFrom!.dy * canvasH - 8,
+                      child: _Marker(
+                        color: Colors.cyanAccent,
+                        shape: _MarkerShape.circle,
+                        icon: Icons.my_location_outlined,
+                        scale: widget.scale,
+                        onTap: () {},
+                      ),
+                    ),
+
+                  // Легенда типов
+                  if (widget.showLegend)
+                    Positioned(
+                      left: 8,
+                      top: 8,
+                      child: Card(
+                        elevation: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final t in _presentTypes(widget.nades)) ...[
+                                Icon(_typeIcon(t), color: _typeColor(t), size: 16),
+                                const SizedBox(width: 4),
+                                Text((widget.typeLabel?.call(t) ?? nadeTypeLabel(t)), style: const TextStyle(fontSize: 12)),
+                                const SizedBox(width: 10),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -238,6 +298,12 @@ class _MapBoardState extends State<MapBoard> {
         );
       },
     );
+  }
+
+  Iterable<NadeType> _presentTypes(List<Nade> nades) {
+    final set = <NadeType>{};
+    for (final n in nades) set.add(n.type);
+    return set;
   }
 
   // Кластеризуем точки по радиусу в пикселях и типу гранаты
@@ -271,36 +337,35 @@ class _MapBoardState extends State<MapBoard> {
     return result;
   }
 
-  void _openClusterPopover(BuildContext context, _Cluster c) async {\n    if (c.items.length == 1) {\n      widget.onSelect(c.items.first);\n      return;\n    }\n    final box = _boxKey.currentContext?.findRenderObject() as RenderBox?;\n    if (box == null) return;\n    final global = box.localToGlobal(c.center);\n    final selected = await showMenu<Nade>(\n      context: context,\n      position: RelativeRect.fromLTRB(global.dx, global.dy, global.dx, global.dy),\n      items: [\n        for (final n in c.items)\n          PopupMenuItem<Nade>(\n            value: n,\n            child: Row(\n              children: [\n                Icon(_typeIcon(c.type), color: _typeColor(c.type)),\n                const SizedBox(width: 8),\n                Expanded(child: Text(n.title, overflow: TextOverflow.ellipsis)),\n              ],\n            ),\n          )\n      ],\n    );\n    if (selected != null) {\n      widget.onSelect(selected);\n    }\n  }\n    showModalBottomSheet(
+    void _openClusterPopover(BuildContext context, _Cluster c) async {
+    if (c.items.length == 1) {
+      widget.onSelect(c.items.first);
+      return;
+    }
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final global = box.localToGlobal(c.center);
+    final selected = await showMenu<Nade>(
       context: context,
-      showDragHandle: true,
-      builder: (ctx) {
-        return SafeArea(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: c.items.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final n = c.items[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: _typeColor(c.type),
-                  child: Icon(_typeIcon(c.type), color: Colors.white),
-                ),
-                title: Text(n.title),
-                subtitle: Text('${n.from} → ${n.to}'),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onSelect(n);
-                },
-              );
-            },
+      position: RelativeRect.fromLTRB(global.dx, global.dy, global.dx, global.dy),
+      items: [
+        for (final n in c.items)
+          PopupMenuItem<Nade>(
+            value: n,
+            child: Row(
+              children: [
+                Icon(_typeIcon(c.type), color: _typeColor(c.type)),
+                const SizedBox(width: 8),
+                Expanded(child: Text(n.title, overflow: TextOverflow.ellipsis)),
+              ],
+            ),
           ),
-        );
-      },
+      ],
     );
+    if (selected != null) {
+      widget.onSelect(selected);
+    }
   }
-
   Color _typeColor(NadeType t) {
     if (widget.colorBlindFriendly) {
       switch (t) {
@@ -323,6 +388,19 @@ class _MapBoardState extends State<MapBoard> {
         return Colors.deepOrange;
       case NadeType.he:
         return Colors.green;
+    }
+  }
+
+  _MarkerShape _typeShape(NadeType t) {
+    switch (t) {
+      case NadeType.smoke:
+        return _MarkerShape.circle;
+      case NadeType.flash:
+        return _MarkerShape.square;
+      case NadeType.molotov:
+        return _MarkerShape.diamond;
+      case NadeType.he:
+        return _MarkerShape.triangle;
     }
   }
 
@@ -389,10 +467,13 @@ class _ClusterMarker extends StatelessWidget {
   }
 }
 
+enum _MarkerShape { circle, square, diamond, triangle }
+
 class _Marker extends StatelessWidget {
   final Color color;
   final String? label;
   final IconData? icon;
+  final _MarkerShape shape;
   final VoidCallback onTap;
   final bool selected;
   final bool favorite;
@@ -402,6 +483,7 @@ class _Marker extends StatelessWidget {
     required this.color,
     this.label,
     this.icon,
+    this.shape = _MarkerShape.circle,
     required this.onTap,
     this.selected = false,
     this.favorite = false,
@@ -423,34 +505,10 @@ class _Marker extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          AnimatedContainer(
+          AnimatedScale(
+            scale: selected ? 1.08 : 1.0,
             duration: const Duration(milliseconds: 150),
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.9),
-              shape: BoxShape.circle,
-              boxShadow: [
-                if (selected)
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                  ),
-              ],
-              border: Border.all(color: borderColor, width: borderWidth),
-            ),
-            alignment: Alignment.center,
-            child: icon != null
-                ? Icon(icon, color: Colors.white, size: (size * 0.58).clamp(10.0, 16.0))
-                : Text(
-                    label ?? '',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            child: _buildShape(size, borderColor, borderWidth),
           ),
           if (favorite)
             const Positioned(
@@ -462,6 +520,122 @@ class _Marker extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildShape(double size, Color borderColor, double borderWidth) {
+    final child = icon != null
+        ? Icon(icon, color: Colors.white, size: (size * 0.58).clamp(10.0, 16.0))
+        : Text(
+            label ?? '',
+            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+          );
+
+    final commonShadow = [
+      if (selected)
+        BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 6, spreadRadius: 1),
+    ];
+
+    switch (shape) {
+      case _MarkerShape.circle:
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.9),
+            shape: BoxShape.circle,
+            boxShadow: commonShadow,
+            border: Border.all(color: borderColor, width: borderWidth),
+          ),
+          alignment: Alignment.center,
+          child: child,
+        );
+      case _MarkerShape.square:
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: commonShadow,
+            border: Border.all(color: borderColor, width: borderWidth),
+          ),
+          alignment: Alignment.center,
+          child: child,
+        );
+      case _MarkerShape.diamond:
+        return Transform.rotate(
+          angle: math.pi / 4,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: commonShadow,
+              border: Border.all(color: borderColor, width: borderWidth),
+            ),
+            alignment: Alignment.center,
+            child: Transform.rotate(angle: -math.pi / 4, child: child),
+          ),
+        );
+      case _MarkerShape.triangle:
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CustomPaint(
+                size: Size(size, size),
+                painter: _TriangleMarkerPainter(
+                  fill: color.withValues(alpha: 0.9),
+                  border: borderColor,
+                  borderWidth: borderWidth,
+                  shadow: selected,
+                ),
+              ),
+              child,
+            ],
+          ),
+        );
+    }
+  }
+}
+
+class _TriangleMarkerPainter extends CustomPainter {
+  final Color fill;
+  final Color border;
+  final double borderWidth;
+  final bool shadow;
+  _TriangleMarkerPainter({required this.fill, required this.border, required this.borderWidth, this.shadow = false});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path();
+    final w = size.width;
+    final h = size.height;
+    path.moveTo(w / 2, 0);
+    path.lineTo(w, h);
+    path.lineTo(0, h);
+    path.close();
+
+    if (shadow) {
+      canvas.drawShadow(path, Colors.black.withValues(alpha: 0.25), 4, false);
+    }
+
+    final fillPaint = Paint()..color = fill;
+    final borderPaint = Paint()
+      ..color = border
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = borderWidth;
+    canvas.drawPath(path, fillPaint);
+    canvas.drawPath(path, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TriangleMarkerPainter oldDelegate) => false;
 }
 
 class _GridPainter extends CustomPainter {
@@ -512,3 +686,5 @@ class _LinePainter extends CustomPainter {
   bool shouldRepaint(covariant _LinePainter old) =>
       old.from != from || old.to != to;
 }
+
+

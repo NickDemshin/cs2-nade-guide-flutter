@@ -43,7 +43,7 @@ class NadesRepository {
     final raw = await rootBundle.loadString('assets/data/maps.json');
     final decoded = json.decode(raw) as Map<String, dynamic>;
     final list = (decoded['maps'] as List<dynamic>).cast<Map<String, dynamic>>();
-    return list.map(CsMap.fromJson).toList(growable: false);
+    return list.map(CsMap.fromJson).toList(growable: true);
   }
 
   Future<List<Nade>> getNadesByMap(String mapId) async {
@@ -61,14 +61,14 @@ class NadesRepository {
   Future<List<Nade>> _readUserNades(String mapId) async {
     try {
       final file = await _userFile(mapId);
-      if (!await file.exists()) return const <Nade>[];
+      if (!await file.exists()) return <Nade>[];
       final raw = await file.readAsString();
       final decoded = json.decode(raw) as Map<String, dynamic>;
       final list = (decoded['nades'] as List<dynamic>? ?? const <dynamic>[])
           .cast<Map<String, dynamic>>();
-      return list.map((e) => Nade.fromJson(e, mapId: mapId)).toList(growable: false);
+      return list.map((e) => Nade.fromJson(e, mapId: mapId)).toList(growable: true);
     } catch (_) {
-      return const <Nade>[];
+      return <Nade>[];
     }
   }
 
@@ -111,3 +111,4 @@ class NadesRepository {
     await _writeUserNades(mapId, list);
   }
 }
+
