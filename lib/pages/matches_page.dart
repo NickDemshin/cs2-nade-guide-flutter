@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/services.dart';
 import '../utils/share_code.dart';
 
 import '../data/matches_repository.dart';
@@ -81,120 +80,12 @@ class _MatchesPageState extends State<MatchesPage> {
     );
   }
 
-  void _openExport() async {
-    final items = await _repo.getAll();
-    final json = await _repo.exportJsonString(items);
-    if (!mounted) return;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(ctx).scaffoldBackgroundColor.withValues(alpha: 0.98),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Экспорт JSON'),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 220,
-                  child: SelectableText(json),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: json));
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Скопировано')));
-                      },
-                      icon: const Icon(Icons.copy_all),
-                      label: const Text('Копировать'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _openImportJson() {
-    final ctrl = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(ctx).scaffoldBackgroundColor.withValues(alpha: 0.98),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Импорт JSON'),
-              const SizedBox(height: 8),
-              TextField(
-                controller: ctrl,
-                maxLines: 10,
-                decoration: const InputDecoration(hintText: '{ "matches": [ ... ] }'),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await _repo.replaceFromJsonString(ctrl.text);
-                      if (!ctx.mounted) return;
-                      Navigator.pop(ctx);
-                      _refresh();
-                    },
-                    icon: const Icon(Icons.file_download_done),
-                    label: const Text('Импортировать'),
-                  ),
-                ],
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Убраны экспорт/импорт JSON из интерфейса по запросу
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Матчи'),
-        actions: [
-          IconButton(
-            tooltip: 'Экспорт JSON',
-            icon: const Icon(Icons.ios_share),
-            onPressed: _openExport,
-          ),
-          IconButton(
-            tooltip: 'Импорт JSON',
-            icon: const Icon(Icons.file_upload),
-            onPressed: _openImportJson,
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Матчи')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openImport,
         icon: const Icon(Icons.add),
