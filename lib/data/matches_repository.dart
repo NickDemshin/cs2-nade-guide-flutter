@@ -57,35 +57,4 @@ class MatchesRepository {
       await _saveAll(items);
     }
   }
-
-  // Export matches as pretty JSON string
-  Future<String> exportJsonString([List<MatchEntry>? items]) async {
-    final list = items ?? await getAll();
-    final payload = {
-      'matches': list.map((e) => e.toJson()).toList(),
-    };
-    return const JsonEncoder.withIndent('  ').convert(payload);
-  }
-
-  // Replace all matches from provided JSON string
-  Future<void> replaceFromJsonString(String jsonString) async {
-    try {
-      final decoded = json.decode(jsonString);
-      List<dynamic> rawList;
-      if (decoded is Map<String, dynamic>) {
-        rawList = (decoded['matches'] as List<dynamic>? ?? const <dynamic>[]);
-      } else if (decoded is List<dynamic>) {
-        rawList = decoded;
-      } else {
-        throw const FormatException('Invalid JSON root');
-      }
-      final items = rawList
-          .cast<Map<String, dynamic>>()
-          .map(MatchEntry.fromJson)
-          .toList(growable: true);
-      await _saveAll(items);
-    } catch (_) {
-      rethrow;
-    }
-  }
 }
