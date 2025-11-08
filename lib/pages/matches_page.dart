@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 import '../utils/share_code.dart';
 
 import '../data/matches_repository.dart';
@@ -61,7 +63,9 @@ class _MatchesPageState extends State<MatchesPage> {
             shareCode: code.trim(),
             createdAt: DateTime.now(),
             status: MatchStatus.ready,
-            note: 'matchId=${decoded.matchId} • outcomeId=${decoded.outcomeId} • token=${decoded.token}',
+            matchId: decoded.matchId,
+            outcomeId: decoded.outcomeId,
+            token: decoded.token,
           );
           await _repo.add(entry);
           if (!mounted) return;
@@ -77,10 +81,120 @@ class _MatchesPageState extends State<MatchesPage> {
     );
   }
 
+  void _openExport() async {
+    final items = await _repo.getAll();
+    final json = await _repo.exportJsonString(items);
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(ctx).scaffoldBackgroundColor.withValues(alpha: 0.98),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Экспорт JSON'),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 220,
+                  child: SelectableText(json),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: json));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Скопировано')));
+                      },
+                      icon: const Icon(Icons.copy_all),
+                      label: const Text('Копировать'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openImportJson() {
+    final ctrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).scaffoldBackgroundColor.withValues(alpha: 0.98),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Импорт JSON'),
+              const SizedBox(height: 8),
+              TextField(
+                controller: ctrl,
+                maxLines: 10,
+                decoration: const InputDecoration(hintText: '{ "matches": [ ... ] }'),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      await _repo.replaceFromJsonString(ctrl.text);
+                      if (!mounted) return;
+                      Navigator.pop(ctx);
+                      _refresh();
+                    },
+                    icon: const Icon(Icons.file_download_done),
+                    label: const Text('Импортировать'),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Матчи')),
+      appBar: AppBar(
+        title: const Text('Матчи'),
+        actions: [
+          IconButton(
+            tooltip: 'Экспорт JSON',
+            icon: const Icon(Icons.ios_share),
+            onPressed: _openExport,
+          ),
+          IconButton(
+            tooltip: 'Импорт JSON',
+            icon: const Icon(Icons.file_upload),
+            onPressed: _openImportJson,
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openImport,
         icon: const Icon(Icons.add),
@@ -92,7 +206,7 @@ class _MatchesPageState extends State<MatchesPage> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          final items = snap.data ?? const <MatchEntry>[];
+          final items = (snap.data ?? const <MatchEntry>[])..sort((a, b) => b.createdAt.compareTo(a.createdAt));
           if (items.isEmpty) {
             return Center(
               child: Column(
@@ -128,8 +242,16 @@ class _MatchesPageState extends State<MatchesPage> {
                   child: ListTile(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     tileColor: Theme.of(context).cardTheme.color,
-                    title: Text(m.map ?? 'Неизвестная карта'),
-                    subtitle: Text('${m.status.name} • ${m.createdAt.toLocal()}\n${m.note ?? ''}'),
+                    title: Text(m.map ?? 'Матч'),
+                    subtitle: () {
+                      final lc = Localizations.localeOf(context).languageCode;
+                      final fmt = DateFormat.yMMMd(lc).add_Hm();
+                      final dt = fmt.format(m.createdAt.toLocal());
+                      final ids = (m.matchId != null && m.outcomeId != null && m.token != null)
+                          ? 'match=${m.matchId} • outcome=${m.outcomeId} • token=${m.token}'
+                          : (m.note ?? '');
+                      return Text('${m.status.name} • $dt\n$ids');
+                    }(),
                     isThreeLine: true,
                     leading: const Icon(Icons.sports_esports),
                     trailing: Row(
