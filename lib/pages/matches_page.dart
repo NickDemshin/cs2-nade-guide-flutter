@@ -68,11 +68,11 @@ class _MatchesPageState extends State<MatchesPage> {
             token: decoded.token,
           );
           await _repo.add(entry);
-          if (!mounted) return;
+          if (!context.mounted) return;
           Navigator.pop(context);
           _refresh();
         } catch (e) {
-          if (!mounted) return;
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Неверный share code: $e')),
           );
@@ -161,7 +161,7 @@ class _MatchesPageState extends State<MatchesPage> {
                   ElevatedButton.icon(
                     onPressed: () async {
                       await _repo.replaceFromJsonString(ctrl.text);
-                      if (!mounted) return;
+                      if (!ctx.mounted) return;
                       Navigator.pop(ctx);
                       _refresh();
                     },
