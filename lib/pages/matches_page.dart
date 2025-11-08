@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../utils/share_code.dart';
 
 import '../data/matches_repository.dart';
 import '../models/match_entry.dart';
@@ -32,17 +33,25 @@ class _MatchesPageState extends State<MatchesPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _ImportSheet(onSubmit: (code) async {
-        final entry = MatchEntry(
-          id: const Uuid().v4(),
-          shareCode: code.trim(),
-          createdAt: DateTime.now(),
-          status: MatchStatus.pending,
-          note: 'Ожидает анализа (офлайн-заглушка)',
-        );
-        await _repo.add(entry);
-        if (!mounted) return;
-        Navigator.pop(context);
-        _refresh();
+        try {
+          final decoded = decodeShareCode(code);
+          final entry = MatchEntry(
+            id: const Uuid().v4(),
+            shareCode: code.trim(),
+            createdAt: DateTime.now(),
+            status: MatchStatus.ready,
+            note: 'matchId=${decoded.matchId} • outcomeId=${decoded.outcomeId} • token=${decoded.token}',
+          );
+          await _repo.add(entry);
+          if (!mounted) return;
+          Navigator.pop(context);
+          _refresh();
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Неверный share code: $e')),
+          );
+        }
       }),
     );
   }
@@ -222,4 +231,3 @@ class _MatchDetailPage extends StatelessWidget {
     );
   }
 }
-
