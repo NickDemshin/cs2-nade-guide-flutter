@@ -6,6 +6,7 @@ import '../data/nades_repository.dart';
 import '../models/cs_map.dart';
 import '../models/nade.dart';
 import 'map_page.dart';
+import 'matches_page.dart';
 import '../l10n/app_localizations.dart';
 import '../locale_controller.dart';
 
@@ -64,6 +65,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Матчи',
+            icon: const Icon(Icons.sports_esports),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MatchesPage()),
+            ),
+          ),
           IconButton(
             tooltip: _grid ? l.toggleList : l.toggleGrid,
             icon: Icon(_grid ? Icons.view_list : Icons.grid_view),

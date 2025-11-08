@@ -41,6 +41,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   path_provider: ^2.1.2
+  uuid: ^4.4.0
 
 ## Removed dependency_overrides that pinned outdated Android implementations
 ## to avoid v1 embedding and NDK mismatch issues.
