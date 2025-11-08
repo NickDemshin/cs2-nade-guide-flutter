@@ -127,7 +127,13 @@ class _MatchesPageState extends State<MatchesPage> {
                   background: Container(color: Colors.redAccent),
                   confirmDismiss: (_) async {
                     await _repo.remove(m.id);
-                    _refresh();
+                    // Оптимистично обновим список без выхода со страницы
+                    setState(() {
+                      _future = _future.then((list) =>
+                          (list ?? const <MatchEntry>[])
+                              .where((e) => e.id != m.id)
+                              .toList());
+                    });
                     return true;
                   },
                   child: ListTile(
@@ -156,10 +162,12 @@ class _MatchesPageState extends State<MatchesPage> {
                         const Icon(Icons.chevron_right),
                       ],
                     ),
-                    onTap: () {
-                      Navigator.of(context).push(
+                    onTap: () async {
+                      await Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => _MatchDetailPage(entry: m)),
                       );
+                      if (!mounted) return;
+                      _refresh();
                     },
                   ),
                 );

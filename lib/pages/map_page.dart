@@ -743,7 +743,12 @@ Future<void> _deleteUserNade(Nade nade) async {
       if (!mounted) return;
       setState(() {
         _selected = null;
-        _futureNades = _repo.getNadesByMap(widget.map.id);
+        // Оптимистично убираем точку из текущего списка, чтобы UI обновился сразу
+        _futureNades = _futureNades.then((list) {
+          final current = (list ?? const <Nade>[]).toList();
+          current.removeWhere((e) => e.id == nade.id);
+          return current;
+        });
       });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
