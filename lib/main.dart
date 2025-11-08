@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'widgets/cs2_background.dart';
+import 'theme/glass_theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'pages/home_page.dart';
@@ -79,6 +80,14 @@ class _NadeGuideAppState extends State<NadeGuideApp> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+      extensions: const [
+        Glass(
+          radius: 16,
+          blurSigma: 14,
+          background: Color(0x0FFFFFFF), // white with ~6% alpha
+          border: Color(0x1FFFFFFF),     // white with ~12% alpha
+        ),
+      ],
     );
 
     return ValueListenableBuilder<Locale?>(

@@ -217,11 +217,13 @@ class _MapBoardState extends State<MapBoard> {
                           child: Semantics(
                             label: (widget.typeLabel?.call(c.type) ?? nadeTypeLabel(c.type)),
                             button: true,
-                            child: _ClusterMarker(
-                              color: _typeColor(c.type),
-                              icon: _typeIcon(c.type),
-                              scale: widget.scale,
-                              onTap: () => _openClusterPopover(context, c),
+                            child: Builder(
+                              builder: (markerCtx) => _ClusterMarker(
+                                color: _typeColor(c.type),
+                                icon: _typeIcon(c.type),
+                                scale: widget.scale,
+                                onTap: () => _openClusterPopover(markerCtx, c),
+                              ),
                             ),
                           ),
                         ),
@@ -310,7 +312,10 @@ class _MapBoardState extends State<MapBoard> {
 
   // Кластеризуем точки по радиусу в пикселях и типу гранаты
   List<_Cluster> _buildClusters(double canvasW, double canvasH, List<Nade> nades) {
-    const double radiusPx = 24.0; // радиус объединения по расстоянию в пикселях
+    // Базовый радиус с учётом масштабирования: при увеличении карты радиус уменьшается,
+    // чтобы воспринимаемый размер на экране был стабильным.
+    final inv = widget.scale <= 0 ? 1.0 : (1.0 / widget.scale);
+    final double radiusPx = (24.0 * inv).clamp(12.0, 28.0);
     final List<_Cluster> result = [];
     for (final n in nades) {
       final p = Offset(n.toX * canvasW, n.toY * canvasH);
@@ -345,11 +350,16 @@ class _MapBoardState extends State<MapBoard> {
       return;
     }
     final box = context.findRenderObject() as RenderBox?;
-    if (box == null) return;
-    final global = box.localToGlobal(c.center);
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (box == null || overlay == null) return;
+    final centerGlobal = box.localToGlobal(box.size.center(Offset.zero), ancestor: overlay);
+    final position = RelativeRect.fromRect(
+      Rect.fromCenter(center: centerGlobal, width: 1, height: 1),
+      Offset.zero & overlay.size,
+    );
     final selected = await showMenu<Nade>(
       context: context,
-      position: RelativeRect.fromLTRB(global.dx, global.dy, global.dx, global.dy),
+      position: position,
       items: [
         for (final n in c.items)
           PopupMenuItem<Nade>(

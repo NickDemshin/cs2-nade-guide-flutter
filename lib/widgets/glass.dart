@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../theme/glass_theme.dart';
 
 class GlassContainer extends StatelessWidget {
   final Widget child;
@@ -9,16 +10,21 @@ class GlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<Glass>();
+    final r = radius == 16 && ext != null ? ext.radius : radius;
+    final bg = ext?.background ?? Colors.white.withValues(alpha: 0.06);
+    final border = ext?.border ?? Colors.white.withValues(alpha: 0.12);
+    final blur = ext?.blurSigma ?? 14.0;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
+      borderRadius: BorderRadius.circular(r),
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            color: bg,
+            borderRadius: BorderRadius.circular(r),
+            border: Border.all(color: border),
           ),
           child: child,
         ),
@@ -62,4 +68,3 @@ class GlassSearchField extends StatelessWidget {
     );
   }
 }
-
