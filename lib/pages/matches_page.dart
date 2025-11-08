@@ -27,6 +27,27 @@ class _MatchesPageState extends State<MatchesPage> {
     await _future;
   }
 
+  Future<void> _confirmAndDelete(MatchEntry m) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Удалить матч?'),
+        content: const Text('Действие нельзя отменить.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Удалить')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await _repo.remove(m.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Матч удалён')));
+        _refresh();
+      }
+    }
+  }
+
   void _openImport() {
     showModalBottomSheet(
       context: context,
@@ -111,7 +132,17 @@ class _MatchesPageState extends State<MatchesPage> {
                     subtitle: Text('${m.status.name} • ${m.createdAt.toLocal()}\n${m.note ?? ''}'),
                     isThreeLine: true,
                     leading: const Icon(Icons.sports_esports),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Удалить',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _confirmAndDelete(m),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => _MatchDetailPage(entry: m)),
@@ -206,7 +237,35 @@ class _MatchDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Анализ матча')),
+      appBar: AppBar(
+        title: const Text('Анализ матча'),
+        actions: [
+          IconButton(
+            tooltip: 'Удалить матч',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Удалить матч?'),
+                  content: const Text('Действие нельзя отменить.'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Удалить')),
+                  ],
+                ),
+              );
+              if (ok == true) {
+                await const MatchesRepository().remove(entry.id);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Матч удалён')));
+                }
+              }
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
