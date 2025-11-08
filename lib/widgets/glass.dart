@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../theme/glass_theme.dart';
+import '../utils/color_compat.dart'; // ignore: unused_import
 
 class GlassContainer extends StatelessWidget {
   final Widget child;

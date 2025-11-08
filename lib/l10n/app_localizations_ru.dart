@@ -222,4 +222,158 @@ class AppLocalizationsRu extends AppLocalizations {
   String fromTo(Object from, Object to) {
     return 'От: $from → К: $to';
   }
+
+  @override
+  String get matchesTitle => 'Матчи';
+
+  @override
+  String get importAction => 'Импорт';
+
+  @override
+  String invalidShareCode(Object error) {
+    return 'Неверный share code: $error';
+  }
+
+  @override
+  String get deleteMatchQuestion => 'Удалить матч?';
+
+  @override
+  String get irreversible => 'Действие нельзя отменить.';
+
+  @override
+  String get cancel => 'Отмена';
+
+  @override
+  String get matchAnalysisTitle => 'Анализ матча';
+
+  @override
+  String get shareCode => 'Share code';
+
+  @override
+  String get status => 'Статус';
+
+  @override
+  String get matchDeleted => 'Матч удалён';
+
+  @override
+  String nadeDeleted(Object title) {
+    return 'Удалено: $title';
+  }
+
+  @override
+  String deleteError(Object error) {
+    return 'Ошибка удаления: $error';
+  }
+
+  @override
+  String get analysisInsights => 'Инсайты';
+
+  @override
+  String get analysisSummary => 'Сводка';
+
+  @override
+  String get analysisThrows => 'Гранаты';
+
+  @override
+  String get analysisUtility => 'Утилити';
+
+  @override
+  String get analysisRounds => 'Раунды';
+
+  @override
+  String get filterType => 'Тип';
+
+  @override
+  String get filterRound => 'Раунд';
+
+  @override
+  String get filterOnlyIneffective => 'Только неэффективные';
+
+  @override
+  String get chartsTable => 'Таблица';
+
+  @override
+  String get chartsGraphs => 'Графики';
+
+  @override
+  String get chartDamageByRound => 'Урон по раундам';
+
+  @override
+  String get chartBlindByRound => 'Ослепление (мс) по раундам';
+
+  @override
+  String get chartImpactByRound => 'Импакт по раундам';
+
+  @override
+  String get chartThrowsByType => 'Броски по типам';
+
+  @override
+  String get chartHeatmap => 'Теплокарта';
+
+  @override
+  String get heatmapNoPoints => 'Нет координат для теплокарты';
+
+  @override
+  String get heatmapNoMap => 'Карта не указана';
+
+  @override
+  String get heatmapNoImage => 'Нет фонового изображения карты';
+
+  @override
+  String kpiTeamFlashRatio(Object percent) {
+    return 'Доля тим‑флэшей: $percent%';
+  }
+
+  @override
+  String kpiSmokeLOS(Object seconds) {
+    return 'Smoke LoS: $secondsс';
+  }
+
+  @override
+  String kpiHeDmg(Object damage) {
+    return 'Урон HE: $damage';
+  }
+
+  @override
+  String badgeIneffective(Object percent) {
+    return 'Неэффективных: $percent%';
+  }
+
+  @override
+  String insightsHighTeamFlashError(Object percent) {
+    return 'Слишком много тим‑флэшей (≥$percent%)';
+  }
+
+  @override
+  String insightsHighTeamFlashWarn(Object percent) {
+    return 'Повышенный уровень тим‑флэшей (≥$percent%)';
+  }
+
+  @override
+  String insightsSmokesLowLOSWarn(Object seconds) {
+    return 'Низкая эффективность смоков (LOS < $secondsс)';
+  }
+
+  @override
+  String insightsSmokesShortLOSInfo(Object seconds) {
+    return 'Короткое перекрытие линий смоками (LOS < $secondsс)';
+  }
+
+  @override
+  String get insightsMolotovLowImpactWarn => 'Молотовы почти без влияния';
+
+  @override
+  String insightsHeLowAvgInfo(Object damage) {
+    return 'Низкий средний урон от HE (<$damage)';
+  }
+
+  @override
+  String insightsIneffectiveTypeWarn(Object percent, Object type) {
+    return 'Много неэффективных $type (≥$percent%)';
+  }
+
+  @override
+  String insightsCriticalRoundsWarn(Object rounds) {
+    return 'Критические раунды (тим‑флэш): $rounds';
+  }
 }

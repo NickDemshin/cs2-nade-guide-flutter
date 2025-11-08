@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:vector_math/vector_math_64.dart' as vmath;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,6 +61,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   bool _cbFriendly = false;
   _PickMode _pickMode = _PickMode.none;
   double? _formToX, _formToY, _formFromX, _formFromY;
+  final ValueNotifier<int> _coordsRev = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -91,6 +93,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     _transform.removeListener(_onTransformChanged);
     _transform.dispose();
     _zoomController.dispose();
+    _coordsRev.dispose();
     super.dispose();
   }
 
@@ -291,6 +294,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
                                     }
                                     _pickMode = _PickMode.none;
                                   });
+                                  _coordsRev.value++;
                                 },
                           typeLabel: l.typeName,
                            colorBlindFriendly: _cbFriendly,
@@ -608,6 +612,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           ),
           child: _NadeForm(
             title: AppLocalizations.of(context).newNadeTitle,
+            coordsRev: _coordsRev,
             onPickTo: () => _openCoordPickerReload(_PickMode.toPoint),
             onPickFrom: () => _openCoordPickerReload(_PickMode.fromPoint),
             getTo: () => (_formToX, _formToY),
@@ -666,6 +671,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           ),
           child: _NadeForm(
             title: AppLocalizations.of(context).editNadeTitle,
+            coordsRev: _coordsRev,
             initial: _NadeFormData(
               title: nade.title,
               type: nade.type,
@@ -728,6 +734,7 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
           _formFromY = pos.dy;
         }
       });
+      _coordsRev.value++;
     }
   }
 
@@ -745,20 +752,22 @@ Future<void> _deleteUserNade(Nade nade) async {
         _selected = null;
         // Оптимистично убираем точку из текущего списка, чтобы UI обновился сразу
         _futureNades = _futureNades.then((list) {
-          final current = (list ?? const <Nade>[]).toList();
+          final current = list.toList();
           current.removeWhere((e) => e.id == nade.id);
           return current;
         });
       });
       if (context.mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Удалено: ${nade.title}')),
+          SnackBar(content: Text(l.nadeDeleted(nade.title))),
         );
       }
     } catch (e) {
       if (context.mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка удаления: $e')),
+          SnackBar(content: Text(l.deleteError(e))),
         );
       }
     }
@@ -920,6 +929,7 @@ class _NadeFormData {
 class _NadeForm extends StatefulWidget {
   final String title;
   final _NadeFormData? initial;
+  final ValueListenable<int> coordsRev;
   final VoidCallback onPickTo;
   final VoidCallback onPickFrom;
   final (double?, double?) Function() getTo;
@@ -927,6 +937,7 @@ class _NadeForm extends StatefulWidget {
   final Future<void> Function(_NadeFormData) onSave;
   const _NadeForm({
     required this.title,
+    required this.coordsRev,
     this.initial,
     required this.onPickTo,
     required this.onPickFrom,
@@ -977,12 +988,16 @@ class _NadeFormState extends State<_NadeForm> {
 
   @override
   Widget build(BuildContext context) {
-    final to = widget.getTo();
-    final from = widget.getFrom();
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return ValueListenableBuilder<int>(
+      valueListenable: widget.coordsRev,
+      builder: (context, _, __) {
+        final to = widget.getTo();
+        final from = widget.getFrom();
+        final coordsOk = to.$1 != null && to.$2 != null && from.$1 != null && from.$2 != null;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
         Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
         TextField(
@@ -1075,17 +1090,30 @@ class _NadeFormState extends State<_NadeForm> {
         Align(
           alignment: Alignment.centerRight,
           child: FilledButton.icon(
-            onPressed: _saving ? null : _submit,
+            onPressed: _saving || !coordsOk ? null : _submit,
             icon: const Icon(Icons.save),
             label: Text(AppLocalizations.of(context).save),
           ),
         ),
-      ],
+          ],
+        );
+      },
     );
   }
 
   Future<void> _submit() async {
     if (_title.text.trim().isEmpty) {
+      return;
+    }
+    final to = widget.getTo();
+    final from = widget.getFrom();
+    if (to.$1 == null || to.$2 == null || from.$1 == null || from.$2 == null) {
+      if (mounted) {
+        final l = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.pickOnMap)),
+        );
+      }
       return;
     }
     setState(() => _saving = true);

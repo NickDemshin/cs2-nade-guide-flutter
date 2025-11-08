@@ -14,8 +14,13 @@ ShareCode decodeShareCode(String input) {
   final map = {for (var i = 0; i < alphabet.length; i++) alphabet[i]: i};
 
   var s = input.trim();
-  if (s.startsWith('CSGO-')) s = s.substring(5);
-  if (s.startsWith('CS2-')) s = s.substring(4);
+  // Be case-insensitive for common prefixes and then strip dashes
+  final su = s.toUpperCase();
+  if (su.startsWith('CSGO-')) {
+    s = s.substring(5);
+  } else if (su.startsWith('CS2-')) {
+    s = s.substring(4);
+  }
   s = s.replaceAll('-', '');
   if (s.isEmpty) throw const FormatException('Invalid share code');
 
@@ -56,4 +61,3 @@ ShareCode decodeShareCode(String input) {
   final token = readLE16(16);
   return ShareCode(matchId: matchId, outcomeId: outcomeId, token: token);
 }
-

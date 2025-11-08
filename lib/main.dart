@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'pages/home_page.dart';
 import 'locale_controller.dart';
+import 'utils/color_compat.dart'; // ignore: unused_import
 
 void main() {
   runApp(const NadeGuideApp());

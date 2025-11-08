@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/color_compat.dart'; // ignore: unused_import
 
 // A reusable Counter‑Strike 2 inspired dark background with subtle colored glows
 // and vignette. Meant to be placed above MaterialApp via the `builder` so all
@@ -87,4 +88,3 @@ class Cs2Background extends StatelessWidget {
     );
   }
 }
-

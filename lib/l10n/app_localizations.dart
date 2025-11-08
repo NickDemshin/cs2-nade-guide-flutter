@@ -487,6 +487,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'From: {from} → To: {to}'**
   String fromTo(Object from, Object to);
+
+  /// No description provided for @matchesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches'**
+  String get matchesTitle;
+
+  /// No description provided for @importAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importAction;
+
+  /// No description provided for @invalidShareCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid share code: {error}'**
+  String invalidShareCode(Object error);
+
+  /// No description provided for @deleteMatchQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete match?'**
+  String get deleteMatchQuestion;
+
+  /// No description provided for @irreversible.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get irreversible;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @matchAnalysisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match Analysis'**
+  String get matchAnalysisTitle;
+
+  /// No description provided for @shareCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Share code'**
+  String get shareCode;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @matchDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Match deleted'**
+  String get matchDeleted;
+
+  /// No description provided for @nadeDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted: {title}'**
+  String nadeDeleted(Object title);
+
+  /// No description provided for @deleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete error: {error}'**
+  String deleteError(Object error);
+
+  /// No description provided for @analysisInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Insights'**
+  String get analysisInsights;
+
+  /// No description provided for @analysisSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get analysisSummary;
+
+  /// No description provided for @analysisThrows.
+  ///
+  /// In en, this message translates to:
+  /// **'Throws'**
+  String get analysisThrows;
+
+  /// No description provided for @analysisUtility.
+  ///
+  /// In en, this message translates to:
+  /// **'Utility'**
+  String get analysisUtility;
+
+  /// No description provided for @analysisRounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Rounds'**
+  String get analysisRounds;
+
+  /// No description provided for @filterType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get filterType;
+
+  /// No description provided for @filterRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Round'**
+  String get filterRound;
+
+  /// No description provided for @filterOnlyIneffective.
+  ///
+  /// In en, this message translates to:
+  /// **'Only ineffective'**
+  String get filterOnlyIneffective;
+
+  /// No description provided for @chartsTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get chartsTable;
+
+  /// No description provided for @chartsGraphs.
+  ///
+  /// In en, this message translates to:
+  /// **'Charts'**
+  String get chartsGraphs;
+
+  /// No description provided for @chartDamageByRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage by round'**
+  String get chartDamageByRound;
+
+  /// No description provided for @chartBlindByRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Blind (ms) by round'**
+  String get chartBlindByRound;
+
+  /// No description provided for @chartImpactByRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Impact by round'**
+  String get chartImpactByRound;
+
+  /// No description provided for @chartThrowsByType.
+  ///
+  /// In en, this message translates to:
+  /// **'Throws by type'**
+  String get chartThrowsByType;
+
+  /// No description provided for @chartHeatmap.
+  ///
+  /// In en, this message translates to:
+  /// **'Heatmap'**
+  String get chartHeatmap;
+
+  /// No description provided for @heatmapNoPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'No coordinates for heatmap'**
+  String get heatmapNoPoints;
+
+  /// No description provided for @heatmapNoMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Map is not specified'**
+  String get heatmapNoMap;
+
+  /// No description provided for @heatmapNoImage.
+  ///
+  /// In en, this message translates to:
+  /// **'No background image for the map'**
+  String get heatmapNoImage;
+
+  /// No description provided for @kpiTeamFlashRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Team flash ratio: {percent}%'**
+  String kpiTeamFlashRatio(Object percent);
+
+  /// No description provided for @kpiSmokeLOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Smoke LoS: {seconds}s'**
+  String kpiSmokeLOS(Object seconds);
+
+  /// No description provided for @kpiHeDmg.
+  ///
+  /// In en, this message translates to:
+  /// **'HE dmg: {damage}'**
+  String kpiHeDmg(Object damage);
+
+  /// No description provided for @badgeIneffective.
+  ///
+  /// In en, this message translates to:
+  /// **'Ineffective: {percent}%'**
+  String badgeIneffective(Object percent);
+
+  /// No description provided for @insightsHighTeamFlashError.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many team flashes (≥{percent}%)'**
+  String insightsHighTeamFlashError(Object percent);
+
+  /// No description provided for @insightsHighTeamFlashWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Elevated team flashes (≥{percent}%)'**
+  String insightsHighTeamFlashWarn(Object percent);
+
+  /// No description provided for @insightsSmokesLowLOSWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Low smoke effectiveness (LOS < {seconds}s)'**
+  String insightsSmokesLowLOSWarn(Object seconds);
+
+  /// No description provided for @insightsSmokesShortLOSInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Short smoke line-of-sight block (LOS < {seconds}s)'**
+  String insightsSmokesShortLOSInfo(Object seconds);
+
+  /// No description provided for @insightsMolotovLowImpactWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Molotovs with almost no impact'**
+  String get insightsMolotovLowImpactWarn;
+
+  /// No description provided for @insightsHeLowAvgInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Low average HE damage (<{damage})'**
+  String insightsHeLowAvgInfo(Object damage);
+
+  /// No description provided for @insightsIneffectiveTypeWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Many ineffective {type} (≥{percent}%)'**
+  String insightsIneffectiveTypeWarn(Object percent, Object type);
+
+  /// No description provided for @insightsCriticalRoundsWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical rounds (team-flash): {rounds}'**
+  String insightsCriticalRoundsWarn(Object rounds);
 }
 
 class _AppLocalizationsDelegate

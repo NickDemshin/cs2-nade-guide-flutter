@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+import '../utils/color_compat.dart'; // ignore: unused_import
 
 import '../models/nade.dart';
 
@@ -552,7 +553,7 @@ class _Marker extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           width: size,
           height: size,
-          decoration: BoxDecoration(
+            decoration: BoxDecoration(
             color: color.withValues(alpha: 0.9),
             shape: BoxShape.circle,
             boxShadow: commonShadow,
@@ -566,7 +567,7 @@ class _Marker extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           width: size,
           height: size,
-          decoration: BoxDecoration(
+            decoration: BoxDecoration(
             color: color.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(6),
             boxShadow: commonShadow,
@@ -628,16 +629,16 @@ class _GlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double _radius = 16;
+    const double radius = 16;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(_radius),
+      borderRadius: BorderRadius.circular(radius),
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(_radius),
+            borderRadius: BorderRadius.circular(radius),
             border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             boxShadow: [
               BoxShadow(
