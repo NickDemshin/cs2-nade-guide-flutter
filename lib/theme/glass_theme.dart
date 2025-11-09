@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show lerpDouble;
 
 class Glass extends ThemeExtension<Glass> {
   final double radius;
@@ -37,4 +38,3 @@ class Glass extends ThemeExtension<Glass> {
     );
   }
 }
-

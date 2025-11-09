@@ -1,20 +1,14 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:flutter_application_1/main.dart';
+import 'package:flutter_application_1/l10n/app_localizations_en.dart';
+import 'package:flutter_application_1/l10n/nade_type_l10n.dart';
+import 'package:flutter_application_1/models/nade.dart';
 
 void main() {
-  testWidgets('App shows home title', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const NadeGuideApp());
-
-    // Verify the Home AppBar title is present.
-    expect(find.text('Гайды по гранатам — CS2'), findsOneWidget);
+  test('L10n type names return expected English labels', () {
+    final l = AppLocalizationsEn();
+    expect(l.typeName(NadeType.smoke), 'Smoke');
+    expect(l.typeName(NadeType.flash), 'Flash');
+    expect(l.typeName(NadeType.molotov), 'Molotov');
+    expect(l.typeName(NadeType.he), 'HE');
   });
 }

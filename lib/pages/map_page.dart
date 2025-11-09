@@ -994,10 +994,15 @@ class _NadeFormState extends State<_NadeForm> {
         final to = widget.getTo();
         final from = widget.getFrom();
         final coordsOk = to.$1 != null && to.$2 != null && from.$1 != null && from.$2 != null;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        final viewInsets = MediaQuery.of(context).viewInsets;
+        return Padding(
+          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
         Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
         TextField(
@@ -1095,7 +1100,9 @@ class _NadeFormState extends State<_NadeForm> {
             label: Text(AppLocalizations.of(context).save),
           ),
         ),
-          ],
+              ],
+            ),
+          ),
         );
       },
     );

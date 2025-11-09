@@ -11,6 +11,7 @@ import '../models/cs_map.dart';
 
 import '../data/matches_repository.dart';
 import '../models/match_entry.dart';
+import '../data/faceit_service.dart';
 
 class MatchesPage extends StatefulWidget {
   const MatchesPage({super.key});
@@ -61,12 +62,13 @@ class _MatchesPageState extends State<MatchesPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _ImportSheet(onSubmit: (code, mapId) async {
+      builder: (sheetContext) => _ImportSheet(onSubmit: (code, mapId) async {
+        // Используем контекст листа для закрытия/диалога, а контекст State — для навигации и snackbar
+        final navSheet = Navigator.of(sheetContext);
         try {
           final decoded = decodeShareCode(code);
-          // Попытаться авто‑определить карту через локальный HTTP‑сервер (если запущен)
           final entry = MatchEntry(
-            id: const Uuid().v4(),
+            id: Uuid().v4(),
             shareCode: code.trim(),
             createdAt: DateTime.now(),
             status: MatchStatus.ready,
@@ -76,11 +78,12 @@ class _MatchesPageState extends State<MatchesPage> {
             token: decoded.token,
           );
           await _repo.add(entry);
-          if (!context.mounted) return;
-          Navigator.pop(context); // закрыть bottom sheet
+          if (!sheetContext.mounted) return;
+          navSheet.pop(); // закрыть bottom sheet
           // Показать индикатор прогресса анализа
+          if (!sheetContext.mounted) return;
           showDialog(
-            context: context,
+            context: sheetContext,
             barrierDismissible: false,
             builder: (ctx) => AlertDialog(
               content: Row(
@@ -94,15 +97,17 @@ class _MatchesPageState extends State<MatchesPage> {
           );
           // Выполнить локальный мок-анализ
           await const AnalysisRepository().generateAndStore(entry);
-          if (!context.mounted) return;
-          Navigator.pop(context); // закрыть диалог прогресса
+          if (!sheetContext.mounted) return;
+          Navigator.pop(sheetContext); // закрыть диалог прогресса
           // Обновить список и перейти на экран деталей
-          _refresh();
+          if (!mounted) return;
+          await _refresh();
+          if (!mounted) return;
           await Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => _MatchDetailPage(entry: entry)),
           );
         } catch (e) {
-          if (!context.mounted) return;
+          if (!mounted) return;
           final l = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l.invalidShareCode(e))),
@@ -114,11 +119,32 @@ class _MatchesPageState extends State<MatchesPage> {
 
   // Убраны экспорт/импорт JSON из интерфейса по запросу
 
+  void _openFaceit() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _FaceitSheet(onDone: () async {
+        if (!mounted) return;
+        await _refresh();
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l.matchesTitle)),
+      appBar: AppBar(
+        title: Text(l.matchesTitle),
+        actions: [
+          IconButton(
+            tooltip: 'FACEIT',
+            icon: const Icon(Icons.cloud_download),
+            onPressed: _openFaceit,
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openImport,
         icon: const Icon(Icons.add),
@@ -219,6 +245,194 @@ class _ImportSheet extends StatefulWidget {
   @override
   State<_ImportSheet> createState() => _ImportSheetState();
 }
+
+// FACEIT импорт: поиск по нику, список матчей и анализ выбранного
+class _FaceitSheet extends StatefulWidget {
+  final VoidCallback? onDone;
+  const _FaceitSheet({this.onDone});
+
+  @override
+  State<_FaceitSheet> createState() => _FaceitSheetState();
+}
+
+class _FaceitSheetState extends State<_FaceitSheet> {
+  final _nick = TextEditingController();
+  final _svc = FaceitService();
+  final _uuid = Uuid();
+  List<FaceitMatchSummary> _matches = const <FaceitMatchSummary>[];
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _nick.dispose();
+    super.dispose();
+  }
+
+  String? _mapFromFaceitId(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    var m = raw.toLowerCase();
+    if (m.startsWith('de_')) m = m.substring(3);
+    // Поддерживаемые ассеты в проекте
+    const known = {
+      'mirage', 'inferno', 'dust2', 'anubis', 'ancient', 'nuke', 'overpass', 'train', 'vertigo'
+    };
+    return known.contains(m) ? m : null;
+  }
+
+  Future<void> _search() async {
+    final nick = _nick.text.trim();
+    if (nick.isEmpty) {
+      setState(() => _error = 'Введите ник FACEIT');
+      return;
+    }
+    setState(() { _loading = true; _error = null; _matches = const []; });
+    try {
+      final pid = await _svc.getPlayerIdByNickname(nick);
+      final items = await _svc.getRecentMatches(pid, limit: 20);
+      if (!mounted) return;
+      setState(() => _matches = items);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _analyze(FaceitMatchSummary m) async {
+    final l = AppLocalizations.of(context);
+    final mapId = _mapFromFaceitId(m.map);
+    final entry = MatchEntry(
+      id: _uuid.v4(),
+      shareCode: 'faceit:${m.id}',
+      createdAt: DateTime.now(),
+      status: MatchStatus.ready,
+      map: mapId,
+      note: 'faceit',
+      matchId: null,
+      outcomeId: null,
+      token: null,
+    );
+    await const MatchesRepository().add(entry);
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        content: Row(children: [
+          SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+          SizedBox(width: 12),
+          Expanded(child: Text('Идёт анализ…')),
+        ]),
+      ),
+    );
+    try {
+      final a = await _svc.analyzeMatch(m.id, mapId: mapId);
+      final fixed = MatchAnalysis(
+        entryId: entry.id,
+        map: a.map ?? mapId,
+        player: a.player,
+        utility: a.utility,
+        rounds: a.rounds,
+        throws: a.throws,
+        insights: a.insights,
+      );
+      await const AnalysisRepository().write(fixed);
+      if (!mounted) return;
+      Navigator.pop(context); // close progress
+      Navigator.pop(context); // close sheet
+      if (!mounted) return;
+      widget.onDone?.call();
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => _MatchDetailPage(entry: entry)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // close progress
+      final msg = e.toString();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.invalidShareCode(msg))));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    return Padding(
+      padding: EdgeInsets.only(bottom: viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.98),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Expanded(child: Text('FACEIT импорт')),
+                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+              ]),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nick,
+                decoration: InputDecoration(
+                  labelText: 'Ник на FACEIT',
+                  hintText: 'e.g. s1mple',
+                  errorText: _error,
+                  prefixIcon: const Icon(Icons.person_search),
+                ),
+                onSubmitted: (_) => _search(),
+              ),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _loading ? null : _search,
+                    icon: const Icon(Icons.search),
+                    label: const Text('Найти матчи'),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 12),
+              if (_loading)
+                const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
+              else if (_matches.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text('Нет данных. Укажите ник и выполните поиск.'),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, i) {
+                    final m = _matches[i];
+                    final map = _mapFromFaceitId(m.map) ?? (m.map ?? '—');
+                    final ts = m.finishedAt?.toLocal();
+                    final when = ts == null ? '' : DateFormat.yMMMd(Localizations.localeOf(context).languageCode).add_Hm().format(ts);
+                    return ListTile(
+                      leading: const Icon(Icons.cloud_download),
+                      title: Text('Матч ${m.id.substring(0, m.id.length.clamp(0, 8))}…'),
+                      subtitle: Text('Карта: $map${when.isNotEmpty ? ' • $when' : ''}'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _analyze(m),
+                    );
+                  },
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemCount: _matches.length,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class _ImportSheetState extends State<_ImportSheet> {
   final _ctrl = TextEditingController();
@@ -372,10 +586,9 @@ class _MatchDetailPageState extends State<_MatchDetailPage> {
               );
               if (ok == true) {
                 await const MatchesRepository().remove(widget.entry.id);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.matchDeleted)));
-                }
+                if (!mounted) return;
+                Navigator.pop(this.context);
+                ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(l.matchDeleted)));
               }
             },
           ),

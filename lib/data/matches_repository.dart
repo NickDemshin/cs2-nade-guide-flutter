@@ -39,6 +39,25 @@ class MatchesRepository {
 
   Future<void> add(MatchEntry entry) async {
     final items = await getAll();
+    // Deduplicate by unique keys: shareCode (normalized) or decoded ids
+    String? normShare(String? s) => (s == null || s.trim().isEmpty) ? null : s.trim().toLowerCase();
+    final ns = normShare(entry.shareCode);
+    final mid = entry.matchId?.toString();
+    final oid = entry.outcomeId?.toString();
+    final tok = entry.token?.toString();
+
+    bool same(MatchEntry e) {
+      final ens = normShare(e.shareCode);
+      final emid = e.matchId?.toString();
+      final eoid = e.outcomeId?.toString();
+      final etok = e.token?.toString();
+      final byShare = (ns != null && ens != null && ns == ens);
+      final byDecoded = (mid != null && oid != null && tok != null &&
+          emid == mid && eoid == oid && etok == tok);
+      return byShare || byDecoded;
+    }
+
+    items.removeWhere(same);
     items.insert(0, entry);
     await _saveAll(items);
   }
